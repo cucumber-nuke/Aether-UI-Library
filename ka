@@ -1,0 +1,52 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local backpack = player:FindFirstChild("Backpack")
+local hasKnife = false
+local knife = nil
+
+-- 칼을 들고 있는지 확인
+if character then
+    knife = character:FindFirstChild("Knife")
+    if knife then
+        hasKnife = true
+    end
+end
+
+-- 인벤토리에 칼이 있는지 확인
+if backpack and not hasKnife then
+    knife = backpack:FindFirstChild("Knife")
+    if knife then
+        hasKnife = true
+        -- 칼을 장착
+        knife.Parent = character
+        wait(0.1)
+    end
+end
+
+-- 칼이 있을 때만 실행
+if hasKnife then
+    local oldPosition = character.HumanoidRootPart.CFrame
+    
+    for _, target in pairs(game.Players:GetPlayers()) do
+        if target ~= player and target.Character 
+        and target.Character:FindFirstChild("Humanoid") 
+        and target.Character:FindFirstChild("HumanoidRootPart")
+        and target.Character.Humanoid.Health > 0 then
+            
+            -- 타겟으로 텔레포트
+            character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+            
+            -- 연속 공격
+            for i = 1, 10 do
+                knife:Activate()
+                wait(0.1)
+            end
+        end
+    end
+    
+    -- 원래 위치로 돌아가기
+    wait(0.1)
+    character.HumanoidRootPart.CFrame = oldPosition
+else
+    print("칼을 가지고 있지 않습니다!")
+end

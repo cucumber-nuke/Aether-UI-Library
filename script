@@ -1,15 +1,39 @@
 local Library = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+-- 설정 저장/불러오기
+local Settings = {
+    UIColor = Color3.fromRGB(30, 30, 35),
+    Transparency = 0.2,
+    NotificationsEnabled = true
+}
+
+local function SaveSettings()
+    local success, err = pcall(function()
+        writefile("UISettings.json", game:GetService("HttpService"):JSONEncode(Settings))
+    end)
+end
+
+local function LoadSettings()
+    local success, result = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(readfile("UISettings.json"))
+    end)
+    if success then
+        Settings = result
+    end
+end
+pcall(LoadSettings)
 
 function Library:CreateWindow(title)
     local GUI = {
         Tabs = {},
         Dragging = false,
-        DraggingOffset = Vector2.new()
+        DraggingOffset = Vector2.new(),
+        NotificationStack = {}
     }
     
-    -- 메인 GUI 생성
     local ScreenGui = Instance.new("ScreenGui")
     local MainFrame = Instance.new("Frame")
     local TopBar = Instance.new("Frame")
@@ -20,12 +44,13 @@ function Library:CreateWindow(title)
     local TabButtons = Instance.new("Frame")
     local TabContent = Instance.new("Frame")
     
-    ScreenGui.Parent = game.CoreGui
+    ScreenGui.Parent = CoreGui
     ScreenGui.Name = "CustomUI"
     
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = ScreenGui
-    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    MainFrame.BackgroundColor3 = Settings.UIColor
+    MainFrame.BackgroundTransparency = Settings.Transparency
     MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
     MainFrame.Size = UDim2.new(0, 500, 0, 350)
     MainFrame.ClipsDescendants = true
@@ -36,7 +61,8 @@ function Library:CreateWindow(title)
     
     TopBar.Name = "TopBar"
     TopBar.Parent = MainFrame
-    TopBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    TopBar.BackgroundColor3 = Settings.UIColor
+    TopBar.BackgroundTransparency = Settings.Transparency
     TopBar.Size = UDim2.new(1, 0, 0, 30)
     
     local TopCorner = Instance.new("UICorner")
@@ -79,12 +105,18 @@ function Library:CreateWindow(title)
     
     TabButtons.Name = "TabButtons"
     TabButtons.Parent = TabContainer
-    TabButtons.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    TabButtons.BackgroundColor3 = Settings.UIColor
+    TabButtons.BackgroundTransparency = Settings.Transparency
     TabButtons.Size = UDim2.new(0, 120, 1, 0)
     
     local TabButtonsCorner = Instance.new("UICorner")
     TabButtonsCorner.CornerRadius = UDim.new(0, 6)
     TabButtonsCorner.Parent = TabButtons
+    
+    local TabButtonList = Instance.new("UIListLayout")
+    TabButtonList.Parent = TabButtons
+    TabButtonList.SortOrder = Enum.SortOrder.LayoutOrder
+    TabButtonList.Padding = UDim.new(0, 2)
     
     TabContent.Name = "TabContent"
     TabContent.Parent = TabContainer
@@ -243,13 +275,15 @@ function Library:CreateWindow(title)
     
     -- 알림 기능
     function GUI:Notify(title, text, duration)
+        if not Settings.NotificationsEnabled then return end
+        
         local Notification = Instance.new("Frame")
         local NotifTitle = Instance.new("TextLabel")
         local NotifText = Instance.new("TextLabel")
         
         Notification.Parent = ScreenGui
         Notification.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        Notification.Position = UDim2.new(1, -250, 1, -100)
+        Notification.Position = UDim2.new(1, -250, 1, -100 - (#GUI.NotificationStack * 90))
         Notification.Size = UDim2.new(0, 200, 0, 80)
         
         local NotifCorner = Instance.new("UICorner")
@@ -277,13 +311,50 @@ function Library:CreateWindow(title)
         NotifText.TextWrapped = true
         NotifText.TextXAlignment = Enum.TextXAlignment.Left
         
+        table.insert(GUI.NotificationStack, Notification)
+        
         -- 애니메이션
-        TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, -220, 1, -100)}):Play()
+        TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, -220, 1, -100 - ((#GUI.NotificationStack - 1) * 90))}):Play()
         wait(duration or 3)
-        TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, 20, 1, -100)}):Play()
+        TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, 20, 1, -100 - ((#GUI.NotificationStack - 1) * 90))}):Play()
         wait(0.5)
         Notification:Destroy()
+        table.remove(GUI.NotificationStack, 1)
     end
+    
+    -- 설정 탭 추가
+    local SettingsTab = GUI:CreateTab("설정")
+    
+    SettingsTab:AddLabel("UI 설정")
+    
+    SettingsTab:AddButton("UI 색상 선택", function()
+        local ColorPicker = Instance.new("Color3Value")
+        ColorPicker.Value = Settings.UIColor
+        ColorPicker.Changed:Connect(function(newColor)
+            Settings.UIColor = newColor
+            MainFrame.BackgroundColor3 = newColor
+            TopBar.BackgroundColor3 = newColor
+            TabButtons.BackgroundColor3 = newColor
+            SaveSettings()
+        end)
+    end)
+    
+    SettingsTab:AddToggle("알림 켜기/끄기", Settings.NotificationsEnabled, function(state)
+        Settings.NotificationsEnabled = state
+        SaveSettings()
+    end)
+    
+    SettingsTab:AddButton("투명도 조절", function()
+        local TransparencySlider = Instance.new("NumberValue")
+        TransparencySlider.Value = Settings.Transparency
+        TransparencySlider.Changed:Connect(function(newTransparency)
+            Settings.Transparency = newTransparency
+            MainFrame.BackgroundTransparency = newTransparency
+            TopBar.BackgroundTransparency = newTransparency
+            TabButtons.BackgroundTransparency = newTransparency
+            SaveSettings()
+        end)
+    end)
     
     return GUI
 end

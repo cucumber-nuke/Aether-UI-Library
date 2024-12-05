@@ -1,0 +1,25 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+for _, plr in pairs(game.Players:GetPlayers()) do
+    if plr ~= player and plr.Character then
+        local backpack = plr:FindFirstChild("Backpack")
+        local hadGun = false
+        
+        -- 인벤토리나 손에 총이 있었는지 확인
+        if backpack and (backpack:FindFirstChild("Revolver") or backpack:FindFirstChild("HeroRevolver")) then
+            hadGun = true
+        end
+        
+        if plr.Character:FindFirstChild("Revolver") or plr.Character:FindFirstChild("HeroRevolver") then
+            hadGun = true
+        end
+        
+        -- 총을 가지고 있던 플레이어가 죽었다면 그 위치로 이동
+        if hadGun and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health <= 0 then
+            humanoidRootPart.CFrame = plr.Character.HumanoidRootPart.CFrame
+            break
+        end
+    end
+end

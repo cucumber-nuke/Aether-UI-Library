@@ -13,7 +13,8 @@ function Library:CreateWindow(name)
     local UICorner = Instance.new("UICorner")
     local TopBar = Instance.new("Frame")
     local Title = Instance.new("TextLabel")
-    local TabList = Instance.new("Frame")
+    local TabList = Instance.new("ScrollingFrame")
+    local TabListLayout = Instance.new("UIListLayout")
     local TabContainer = Instance.new("Frame")
     local CloseButton = Instance.new("TextButton")
     local MinimizeButton = Instance.new("TextButton")
@@ -32,8 +33,6 @@ function Library:CreateWindow(name)
     Main.Position = UDim2.new(0.5, -300, 0.5, -175)
     Main.Size = UDim2.new(0, 600, 0, 350)
     Main.ClipsDescendants = true
-    Main.Active = true
-    Main.Draggable = true
     
     UICorner.CornerRadius = UDim.new(0, 10)
     UICorner.Parent = Main
@@ -85,10 +84,17 @@ function Library:CreateWindow(name)
     TabList.BackgroundTransparency = 0.1
     TabList.Position = UDim2.new(0, 0, 0, 30)
     TabList.Size = UDim2.new(0, 150, 1, -30)
+    TabList.ScrollBarThickness = 0
+    TabList.CanvasSize = UDim2.new(0, 0, 0, 0)
     
-    local TabListCorner = Instance.new("UICorner")
-    TabListCorner.CornerRadius = UDim.new(0, 10)
-    TabListCorner.Parent = TabList
+    TabListLayout.Parent = TabList
+    TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabListLayout.Padding = UDim.new(0, 5)
+    
+    local TabListPadding = Instance.new("UIPadding")
+    TabListPadding.Parent = TabList
+    TabListPadding.PaddingTop = UDim.new(0, 5)
     
     TabContainer.Name = "TabContainer"
     TabContainer.Parent = Main
@@ -171,13 +177,13 @@ function Library:CreateWindow(name)
             Position = UDim2.new(1, -20, 1, -20)
         }):Play()
         
-        wait(2)
+        task.wait(2)
         
         TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
             Position = UDim2.new(1, 300, 1, -20)
         }):Play()
         
-        wait(0.5)
+        task.wait(0.5)
         Notification:Destroy()
     end
     
@@ -187,58 +193,75 @@ function Library:CreateWindow(name)
         local TabButton = Instance.new("TextButton")
         local TabPage = Instance.new("ScrollingFrame")
         local UIListLayout = Instance.new("UIListLayout")
+        local UIPadding = Instance.new("UIPadding")
         
         TabButton.Name = name .. "Button"
         TabButton.Parent = TabList
         TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
         TabButton.BackgroundTransparency = 0.1
         TabButton.Size = UDim2.new(1, -10, 0, 30)
-        TabButton.Position = UDim2.new(0, 5, 0, #Window.Tabs * 35 + 5)
         TabButton.Font = Enum.Font.SourceSans
         TabButton.Text = name
         TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
         TabButton.TextSize = 14
+        TabButton.AutoButtonColor = false
         
         local TabButtonCorner = Instance.new("UICorner")
-        TabButtonCorner.CornerRadius = UDim.new(0, 10)
+        TabButtonCorner.CornerRadius = UDim.new(0, 6)
         TabButtonCorner.Parent = TabButton
         
         TabPage.Name = name .. "Page"
         TabPage.Parent = TabContainer
+        TabPage.Active = true
         TabPage.BackgroundTransparency = 1
-        TabPage.Size = UDim2.new(1, -10, 1, -10)
-        TabPage.Position = UDim2.new(0, 5, 0, 5)
+        TabPage.BorderSizePixel = 0
+        TabPage.Position = UDim2.new(0, 0, 0, 0)
+        TabPage.Size = UDim2.new(1, 0, 1, 0)
+        TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
         TabPage.ScrollBarThickness = 3
         TabPage.Visible = false
-        TabPage.ClipsDescendants = true
         
         UIListLayout.Parent = TabPage
+        UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
         UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
         UIListLayout.Padding = UDim.new(0, 5)
         
-        TabButton.MouseButton1Click:Connect(function()
-            if Window.CurrentTab then
-                Window.CurrentTab.Visible = false
-            end
-            
-            TabPage.Visible = true
-            Window.CurrentTab = TabPage
+        UIPadding.Parent = TabPage
+        UIPadding.PaddingTop = UDim.new(0, 5)
+        UIPadding.PaddingLeft = UDim.new(0, 5)
+        UIPadding.PaddingRight = UDim.new(0, 5)
+        
+        UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            TabPage.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 10)
         end)
         
-        if #Window.Tabs == 0 then
+        TabButton.MouseButton1Click:Connect(function()
+            for _, tab in pairs(TabContainer:GetChildren()) do
+                tab.Visible = false
+            end
             TabPage.Visible = true
-            Window.CurrentTab = TabPage
-        end
-        
-        table.insert(Window.Tabs, TabPage)
+            
+            for _, button in pairs(TabList:GetChildren()) do
+                if button:IsA("TextButton") then
+                    TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                        BackgroundTransparency = 0.1
+                    }):Play()
+                end
+            end
+            
+            TweenService:Create(TabButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundTransparency = 0
+            }):Play()
+        end)
         
         function Tab:AddButton(text, callback)
             local Button = Instance.new("TextButton")
+            
             Button.Name = text
             Button.Parent = TabPage
             Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
             Button.BackgroundTransparency = 0.1
-            Button.Size = UDim2.new(1, -10, 0, 30)
+            Button.Size = UDim2.new(1, 0, 0, 30)
             Button.Font = Enum.Font.SourceSans
             Button.Text = text
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -246,17 +269,17 @@ function Library:CreateWindow(name)
             Button.AutoButtonColor = false
             
             local ButtonCorner = Instance.new("UICorner")
-            ButtonCorner.CornerRadius = UDim.new(0, 10)
+            ButtonCorner.CornerRadius = UDim.new(0, 6)
             ButtonCorner.Parent = Button
             
             Button.MouseEnter:Connect(function()
-                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
                     BackgroundTransparency = 0
                 }):Play()
             end)
             
             Button.MouseLeave:Connect(function()
-                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
                     BackgroundTransparency = 0.1
                 }):Play()
             end)
@@ -279,10 +302,10 @@ function Library:CreateWindow(name)
             Toggle.Parent = TabPage
             Toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
             Toggle.BackgroundTransparency = 0.1
-            Toggle.Size = UDim2.new(1, -10, 0, 30)
+            Toggle.Size = UDim2.new(1, 0, 0, 30)
             
             local ToggleCorner = Instance.new("UICorner")
-            ToggleCorner.CornerRadius = UDim.new(0, 10)
+            ToggleCorner.CornerRadius = UDim.new(0, 6)
             ToggleCorner.Parent = Toggle
             
             Title.Name = "Title"
@@ -306,14 +329,27 @@ function Library:CreateWindow(name)
             ToggleButton.Text = ""
             ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
             ToggleButton.TextSize = 14
+            ToggleButton.AutoButtonColor = false
             
             local ToggleButtonCorner = Instance.new("UICorner")
-            ToggleButtonCorner.CornerRadius = UDim.new(0, 10)
+            ToggleButtonCorner.CornerRadius = UDim.new(0, 4)
             ToggleButtonCorner.Parent = ToggleButton
+            
+            Toggle.MouseEnter:Connect(function()
+                TweenService:Create(Toggle, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                    BackgroundTransparency = 0
+                }):Play()
+            end)
+            
+            Toggle.MouseLeave:Connect(function()
+                TweenService:Create(Toggle, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                    BackgroundTransparency = 0.1
+                }):Play()
+            end)
             
             ToggleButton.MouseButton1Click:Connect(function()
                 enabled = not enabled
-                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
                     BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 128) or Color3.fromRGB(255, 64, 64)
                 }):Play()
                 
@@ -324,13 +360,22 @@ function Library:CreateWindow(name)
             return Toggle
         end
         
+        if #Window.Tabs == 0 then
+            TabPage.Visible = true
+            TweenService:Create(TabButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundTransparency = 0
+            }):Play()
+        end
+        
+        table.insert(Window.Tabs, Tab)
+        
         return Tab
     end
     
     local SettingsTab = Window:CreateTab("설정")
-    SettingsTab.TabButton.LayoutOrder = 9999
     
-    SettingsTab:AddToggle("UI 토글 키", "RightShift", function(key)
+    SettingsTab:AddToggle("UI 토글 키", false, function(state)
+        print("UI 토글 키:", state)
     end)
     
     SettingsTab:AddButton("UI 초기화", function()

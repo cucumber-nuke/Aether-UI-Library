@@ -1,0 +1,151 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local ESP = {
+    Enabled = false,
+    Boxes = true,
+    Names = true,
+    Tracers = true,
+    Players = {},
+    Connections = {}
+}
+
+function ESP:GetCharacter(player)
+    return player.Character
+end
+
+function ESP:CreateBox(player)
+    local box = Drawing.new("Square")
+    box.Visible = false
+    box.Color = Color3.fromRGB(255, 255, 255)
+    box.Thickness = 1
+    box.Transparency = 1
+    box.Filled = false
+
+    local name = Drawing.new("Text")
+    name.Visible = false
+    name.Color = Color3.fromRGB(255, 255, 255)
+    name.Size = 14
+    name.Center = true
+    name.Outline = true
+
+    local tracer = Drawing.new("Line")
+    tracer.Visible = false
+    tracer.Color = Color3.fromRGB(255, 255, 255)
+    tracer.Thickness = 1
+    tracer.Transparency = 1
+
+    ESP.Players[player] = {
+        Box = box,
+        Name = name,
+        Tracer = tracer,
+        Character = ESP:GetCharacter(player)
+    }
+end
+
+function ESP:RemovePlayer(player)
+    if ESP.Players[player] then
+        for _, drawing in pairs(ESP.Players[player]) do
+            if type(drawing) == "table" and drawing.Remove then
+                drawing:Remove()
+            end
+        end
+        ESP.Players[player] = nil
+    end
+end
+
+function ESP:UpdateESP()
+    for player, drawings in pairs(ESP.Players) do
+        if player ~= LocalPlayer and drawings.Character and drawings.Character:FindFirstChild("HumanoidRootPart") then
+            local character = drawings.Character
+            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+            local head = character:FindFirstChild("Head")
+            
+            if humanoidRootPart and head then
+                local vector, onScreen = Camera:WorldToViewportPoint(humanoidRootPart.Position)
+                
+                if onScreen then
+                    -- Box ESP
+                    if ESP.Boxes then
+                        local rootPos = Camera:WorldToViewportPoint(humanoidRootPart.Position)
+                        local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                        local height = math.abs(rootPos.Y - headPos.Y)
+                        local width = height * 0.6
+                        
+                        drawings.Box.Size = Vector2.new(width, height)
+                        drawings.Box.Position = Vector2.new(rootPos.X - width / 2, rootPos.Y - height / 2)
+                        drawings.Box.Visible = true
+                    else
+                        drawings.Box.Visible = false
+                    end
+
+                    -- Name ESP
+                    if ESP.Names then
+                        local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                        drawings.Name.Position = Vector2.new(headPos.X, headPos.Y - 25)
+                        drawings.Name.Text = player.Name
+                        drawings.Name.Visible = true
+                    else
+                        drawings.Name.Visible = false
+                    end
+
+                    -- Tracer ESP
+                    if ESP.Tracers then
+                        local rootPos = Camera:WorldToViewportPoint(humanoidRootPart.Position)
+                        drawings.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        drawings.Tracer.To = Vector2.new(rootPos.X, rootPos.Y)
+                        drawings.Tracer.Visible = true
+                    else
+                        drawings.Tracer.Visible = false
+                    end
+                else
+                    drawings.Box.Visible = false
+                    drawings.Name.Visible = false
+                    drawings.Tracer.Visible = false
+                end
+            end
+        end
+    end
+end
+
+function ESP:Toggle(state)
+    ESP.Enabled = state
+    if state then
+        -- 기존 플레이어에 대한 ESP 생성
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                ESP:CreateBox(player)
+            end
+        end
+
+        -- 새로운 플레이어 감지
+        ESP.Connections.PlayerAdded = Players.PlayerAdded:Connect(function(player)
+            ESP:CreateBox(player)
+        end)
+
+        -- 플레이어 제거 감지
+        ESP.Connections.PlayerRemoving = Players.PlayerRemoving:Connect(function(player)
+            ESP:RemovePlayer(player)
+        end)
+
+        -- ESP 업데이트
+        ESP.Connections.RenderStepped = RunService.RenderStepped:Connect(function()
+            ESP:UpdateESP()
+        end)
+    else
+        -- 모든 ESP 제거
+        for player, _ in pairs(ESP.Players) do
+            ESP:RemovePlayer(player)
+        end
+
+        -- 연결 해제
+        for _, connection in pairs(ESP.Connections) do
+            connection:Disconnect()
+        end
+        ESP.Connections = {}
+    end
+end
+
+return ESP

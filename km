@@ -19,6 +19,7 @@ if backpack and not hasGun then
         hasGun = true
         -- 총을 장착
         gun.Parent = character
+        wait(0.1)
     end
 end
 
@@ -39,13 +40,14 @@ if hasGun then
             end
 
             if targetHasKnife then
-                -- 타겟으로 조준
-                local targetPosition = targetCharacter.HumanoidRootPart.Position
-                local aimPosition = CFrame.new(character.Head.Position, targetPosition)
-                character:SetPrimaryPartCFrame(aimPosition)
+                -- 타겟 위로 이동
+                local targetPosition = targetCharacter.HumanoidRootPart.Position + Vector3.new(0, 5, 0)
+                character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
 
-                -- 총 발사
-                gun:Activate()
+                -- 아래를 향해 총 발사
+                local aimPosition = CFrame.new(character.Head.Position, targetCharacter.HumanoidRootPart.Position)
+                character:SetPrimaryPartCFrame(aimPosition)
+                Revolver:Activate()
                 wait(0.1)
             end
         end

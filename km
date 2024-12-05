@@ -47,7 +47,7 @@ if hasGun then
                 -- 아래를 향해 총 발사
                 local aimPosition = CFrame.new(character.Head.Position, targetCharacter.HumanoidRootPart.Position)
                 character:SetPrimaryPartCFrame(aimPosition)
-                Revolver:Activate()
+                Revolver:Fire()
                 wait(0.1)
             end
         end

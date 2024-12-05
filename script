@@ -1,444 +1,163 @@
-local Library = {}
+local AdvancedUI = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 
--- 설정 저장/불러오기
-local Settings = {
-    UIColor = Color3.fromRGB(30, 30, 35),
-    Transparency = 0.2,
-    NotificationsEnabled = true
-}
-
-local function SaveSettings()
-    local success, err = pcall(function()
-        writefile("UISettings.json", game:GetService("HttpService"):JSONEncode(Settings))
-    end)
+-- 유틸리티 함수들
+local function createTween(object, info, properties)
+    local tween = TweenService:Create(object, TweenInfo.new(
+        info.Time or 0.5,
+        info.EasingStyle or Enum.EasingStyle.Quart,
+        info.EasingDirection or Enum.EasingDirection.Out
+    ), properties)
+    return tween
 end
 
-local function LoadSettings()
-    local success, result = pcall(function()
-        return game:GetService("HttpService"):JSONDecode(readfile("UISettings.json"))
-    end)
-    if success then
-        Settings = result
-    end
-end
-pcall(LoadSettings)
-
-function Library:CreateWindow(title)
-    local GUI = {
-        Tabs = {},
-        Dragging = false,
-        DraggingOffset = Vector2.new(),
-        NotificationStack = {}
-    }
+function AdvancedUI.new(title)
+    local UI = {}
     
+    -- 메인 GUI 생성
     local ScreenGui = Instance.new("ScreenGui")
     local MainFrame = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
     local TopBar = Instance.new("Frame")
     local Title = Instance.new("TextLabel")
-    local CloseButton = Instance.new("TextButton")
-    local MinimizeButton = Instance.new("TextButton")
-    local TabContainer = Instance.new("Frame")
-    local TabButtons = Instance.new("Frame")
-    local TabContent = Instance.new("Frame")
+    local TabContainer = Instance.new("ScrollingFrame")
+    local ContentContainer = Instance.new("Frame")
     
-    ScreenGui.Parent = CoreGui
-    ScreenGui.Name = "CustomUI"
+    -- GUI 설정
+    ScreenGui.Name = "AdvancedUI"
+    ScreenGui.Parent = game:GetService("CoreGui")
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = ScreenGui
-    MainFrame.BackgroundColor3 = Settings.UIColor
-    MainFrame.BackgroundTransparency = Settings.Transparency
-    MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
-    MainFrame.Size = UDim2.new(0, 500, 0, 350)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    MainFrame.Size = UDim2.new(0, 600, 0, 400)
     MainFrame.ClipsDescendants = true
     
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 6)
-    Corner.Parent = MainFrame
-    
-    TopBar.Name = "TopBar"
-    TopBar.Parent = MainFrame
-    TopBar.BackgroundColor3 = Settings.UIColor
-    TopBar.BackgroundTransparency = Settings.Transparency
-    TopBar.Size = UDim2.new(1, 0, 0, 30)
-    
-    local TopCorner = Instance.new("UICorner")
-    TopCorner.CornerRadius = UDim.new(0, 6)
-    TopCorner.Parent = TopBar
-    
-    Title.Parent = TopBar
-    Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0, 10, 0, 0)
-    Title.Size = UDim2.new(1, -50, 1, 0)
-    Title.Font = Enum.Font.GothamBold
-    Title.Text = title
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 14
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    
-    CloseButton.Parent = TopBar
-    CloseButton.BackgroundTransparency = 1
-    CloseButton.Position = UDim2.new(1, -25, 0, 5)
-    CloseButton.Size = UDim2.new(0, 20, 0, 20)
-    CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.Text = "X"
-    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CloseButton.TextSize = 14
-    
-    MinimizeButton.Parent = TopBar
-    MinimizeButton.BackgroundTransparency = 1
-    MinimizeButton.Position = UDim2.new(1, -50, 0, 5)
-    MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
-    MinimizeButton.Font = Enum.Font.GothamBold
-    MinimizeButton.Text = "-"
-    MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    MinimizeButton.TextSize = 14
-    
-    TabContainer.Name = "TabContainer"
-    TabContainer.Parent = MainFrame
-    TabContainer.BackgroundTransparency = 1
-    TabContainer.Position = UDim2.new(0, 0, 0, 30)
-    TabContainer.Size = UDim2.new(1, 0, 1, -30)
-    
-    TabButtons.Name = "TabButtons"
-    TabButtons.Parent = TabContainer
-    TabButtons.BackgroundColor3 = Settings.UIColor
-    TabButtons.BackgroundTransparency = Settings.Transparency
-    TabButtons.Size = UDim2.new(0, 120, 1, 0)
-    
-    local TabButtonsCorner = Instance.new("UICorner")
-    TabButtonsCorner.CornerRadius = UDim.new(0, 6)
-    TabButtonsCorner.Parent = TabButtons
-    
-    local TabButtonList = Instance.new("UIListLayout")
-    TabButtonList.Parent = TabButtons
-    TabButtonList.SortOrder = Enum.SortOrder.LayoutOrder
-    TabButtonList.Padding = UDim.new(0, 2)
-    
-    TabContent.Name = "TabContent"
-    TabContent.Parent = TabContainer
-    TabContent.BackgroundTransparency = 1
-    TabContent.Position = UDim2.new(0, 125, 0, 5)
-    TabContent.Size = UDim2.new(1, -130, 1, -10)
-    
-    -- 드래그 기능
+    -- UI 드래그 기능
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+
     TopBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            GUI.Dragging = true
-            GUI.DraggingOffset = MainFrame.Position - UDim2.new(0, input.Position.X, 0, input.Position.Y)
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
         end
     end)
-    
+
     TopBar.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            GUI.Dragging = false
+            dragging = false
         end
     end)
-    
+
     UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and GUI.Dragging then
-            MainFrame.Position = GUI.DraggingOffset + UDim2.new(0, input.Position.X, 0, input.Position.Y)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
         end
     end)
     
-    -- 최소화/닫기 기능
-    local minimized = false
-    MinimizeButton.MouseButton1Click:Connect(function()
-        minimized = not minimized
-        if minimized then
-            TabContainer.Visible = false
-            MainFrame.Size = UDim2.new(0, 500, 0, 30)
-        else
-            TabContainer.Visible = true
-            MainFrame.Size = UDim2.new(0, 500, 0, 350)
-        end
-    end)
-    
-    CloseButton.MouseButton1Click:Connect(function()
-        ScreenGui:Destroy()
-    end)
-    
-    -- 탭 생성 함수
-    function GUI:CreateTab(name)
+    -- UI 메서드들
+    function UI:CreateTab(name)
         local Tab = {}
         
         local TabButton = Instance.new("TextButton")
-        local TabPage = Instance.new("ScrollingFrame")
-        local UIListLayout = Instance.new("UIListLayout")
+        local TabContent = Instance.new("ScrollingFrame")
         
-        TabButton.Parent = TabButtons
-        TabButton.BackgroundTransparency = 1
-        TabButton.Size = UDim2.new(1, 0, 0, 30)
-        TabButton.Font = Enum.Font.Gotham
+        -- 탭 버튼 설정
+        TabButton.Name = name .. "Tab"
+        TabButton.Parent = TabContainer
+        TabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        TabButton.Size = UDim2.new(1, -10, 0, 40)
         TabButton.Text = name
-        TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-        TabButton.TextSize = 14
+        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
         
-        TabPage.Parent = TabContent
-        TabPage.BackgroundTransparency = 1
-        TabPage.Size = UDim2.new(1, 0, 1, 0)
-        TabPage.ScrollBarThickness = 2
-        TabPage.Visible = false
-        TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
-        TabPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        -- 탭 컨텐츠 설정
+        TabContent.Name = name .. "Content"
+        TabContent.Parent = ContentContainer
+        TabContent.BackgroundTransparency = 1
+        TabContent.Size = UDim2.new(1, 0, 1, 0)
+        TabContent.Visible = false
         
-        UIListLayout.Parent = TabPage
-        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        UIListLayout.Padding = UDim.new(0, 5)
-        
-        -- 탭 전환 기능
-        TabButton.MouseButton1Click:Connect(function()
-            for _, v in pairs(TabContent:GetChildren()) do
-                v.Visible = false
-            end
-            TabPage.Visible = true
-            
-            for _, v in pairs(TabButtons:GetChildren()) do
-                if v:IsA("TextButton") then
-                    v.TextColor3 = Color3.fromRGB(200, 200, 200)
-                end
-            end
-            TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        end)
-        
-        -- 요소 추가 함수들
-        function Tab:AddButton(text, callback)
+        -- 탭 메서드들
+        function Tab:CreateButton(buttonText, callback)
             local Button = Instance.new("TextButton")
-            Button.Parent = TabPage
-            Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-            Button.Size = UDim2.new(1, -10, 0, 30)
-            Button.Font = Enum.Font.Gotham
-            Button.Text = text
+            Button.Name = buttonText .. "Button"
+            Button.Parent = TabContent
+            Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            Button.Size = UDim2.new(1, -20, 0, 40)
+            Button.Text = buttonText
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Button.TextSize = 14
-            Button.AutoButtonColor = false
-            
-            local ButtonCorner = Instance.new("UICorner")
-            ButtonCorner.CornerRadius = UDim.new(0, 4)
-            ButtonCorner.Parent = Button
-            
-            -- 버튼 호버 효과
-            Button.MouseEnter:Connect(function()
-                TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
-            end)
-            
-            Button.MouseLeave:Connect(function()
-                TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 45)}):Play()
-            end)
             
             Button.MouseButton1Click:Connect(callback)
             return Button
         end
         
-        function Tab:AddToggle(text, default, callback)
+        function Tab:CreateToggle(toggleText, callback)
             local ToggleFrame = Instance.new("Frame")
             local ToggleButton = Instance.new("TextButton")
             local ToggleStatus = Instance.new("Frame")
-            local enabled = default or false
+            local enabled = false
             
-            ToggleFrame.Parent = TabPage
-            ToggleFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-            ToggleFrame.Size = UDim2.new(1, -10, 0, 30)
-            
-            local ToggleCorner = Instance.new("UICorner")
-            ToggleCorner.CornerRadius = UDim.new(0, 4)
-            ToggleCorner.Parent = ToggleFrame
-            
-            ToggleButton.Parent = ToggleFrame
-            ToggleButton.BackgroundTransparency = 1
-            ToggleButton.Size = UDim2.new(1, 0, 1, 0)
-            ToggleButton.Font = Enum.Font.Gotham
-            ToggleButton.Text = text
-            ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-            ToggleButton.TextSize = 14
-            
-            ToggleStatus.Parent = ToggleFrame
-            ToggleStatus.Position = UDim2.new(1, -25, 0.5, -8)
-            ToggleStatus.Size = UDim2.new(0, 16, 0, 16)
-            ToggleStatus.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(255, 50, 50)
-            
-            local StatusCorner = Instance.new("UICorner")
-            StatusCorner.CornerRadius = UDim.new(0, 4)
-            StatusCorner.Parent = ToggleStatus
+            -- 토글 설정
+            ToggleFrame.Name = toggleText .. "Toggle"
+            ToggleFrame.Parent = TabContent
+            ToggleFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            ToggleFrame.Size = UDim2.new(1, -20, 0, 40)
             
             ToggleButton.MouseButton1Click:Connect(function()
                 enabled = not enabled
-                ToggleStatus.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(255, 50, 50)
                 callback(enabled)
-                if Settings.NotificationsEnabled then
-                    GUI:Notify("토글", text .. (enabled and " 활성화" or " 비활성화"), 2)
-                end
+                
+                -- 토글 애니메이션
+                local goal = {
+                    BackgroundColor3 = enabled and 
+                        Color3.fromRGB(0, 255, 128) or 
+                        Color3.fromRGB(255, 64, 64)
+                }
+                
+                createTween(ToggleStatus, {Time = 0.3}, goal):Play()
             end)
             
             return ToggleFrame
         end
         
-        function Tab:AddLabel(text)
-            local Label = Instance.new("TextLabel")
-            Label.Parent = TabPage
-            Label.BackgroundTransparency = 1
-            Label.Size = UDim2.new(1, -10, 0, 20)
-            Label.Font = Enum.Font.Gotham
-            Label.Text = text
-            Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Label.TextSize = 14
-            Label.TextXAlignment = Enum.TextXAlignment.Left
+        function Tab:CreateSlider(sliderText, min, max, default, callback)
+            local SliderFrame = Instance.new("Frame")
+            local SliderBar = Instance.new("Frame")
+            local SliderButton = Instance.new("TextButton")
             
-            return Label
+            -- 슬라이더 설정
+            SliderFrame.Name = sliderText .. "Slider"
+            SliderFrame.Parent = TabContent
+            SliderFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            SliderFrame.Size = UDim2.new(1, -20, 0, 60)
+            
+            -- 슬라이더 드래그 기능 구현
+            local dragging = false
+            
+            SliderButton.MouseButton1Down:Connect(function()
+                dragging = true
+            end)
+            
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+            
+            return SliderFrame
         end
         
         return Tab
     end
     
-    -- 알림 기능
-    function GUI:Notify(title, text, duration)
-        if not Settings.NotificationsEnabled then return end
-        
-        local Notification = Instance.new("Frame")
-        local NotifTitle = Instance.new("TextLabel")
-        local NotifText = Instance.new("TextLabel")
-        
-        Notification.Parent = ScreenGui
-        Notification.BackgroundColor3 = Settings.UIColor
-        Notification.BackgroundTransparency = Settings.Transparency
-        Notification.Position = UDim2.new(1, 20, 1, -100 - (#GUI.NotificationStack * 90))
-        Notification.Size = UDim2.new(0, 200, 0, 80)
-        
-        local NotifCorner = Instance.new("UICorner")
-        NotifCorner.CornerRadius = UDim.new(0, 6)
-        NotifCorner.Parent = Notification
-        
-        NotifTitle.Parent = Notification
-        NotifTitle.BackgroundTransparency = 1
-        NotifTitle.Position = UDim2.new(0, 10, 0, 5)
-        NotifTitle.Size = UDim2.new(1, -20, 0, 20)
-        NotifTitle.Font = Enum.Font.GothamBold
-        NotifTitle.Text = title
-        NotifTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-        NotifTitle.TextSize = 14
-        NotifTitle.TextXAlignment = Enum.TextXAlignment.Left
-        
-        NotifText.Parent = Notification
-        NotifText.BackgroundTransparency = 1
-        NotifText.Position = UDim2.new(0, 10, 0, 30)
-        NotifText.Size = UDim2.new(1, -20, 1, -40)
-        NotifText.Font = Enum.Font.Gotham
-        NotifText.Text = text
-        NotifText.TextColor3 = Color3.fromRGB(200, 200, 200)
-        NotifText.TextSize = 14
-        NotifText.TextWrapped = true
-        NotifText.TextXAlignment = Enum.TextXAlignment.Left
-        
-        table.insert(GUI.NotificationStack, Notification)
-        
-        -- 알림 애니메이션
-        TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, -220, 1, -100 - ((#GUI.NotificationStack - 1) * 90))}):Play()
-        wait(duration or 3)
-        TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, 20, 1, -100 - ((#GUI.NotificationStack - 1) * 90))}):Play()
-        wait(0.5)
-        
-        -- 알림 스택에서 제거
-        for i, v in ipairs(GUI.NotificationStack) do
-            if v == Notification then
-                table.remove(GUI.NotificationStack, i)
-                break
-            end
-        end
-        
-        -- 남은 알림들 위치 조정
-        for i, v in ipairs(GUI.NotificationStack) do
-            TweenService:Create(v, TweenInfo.new(0.3), {Position = UDim2.new(1, -220, 1, -100 - ((i-1) * 90))}):Play()
-        end
-        
-        Notification:Destroy()
-    end
-    
-    -- 설정 탭 추가
-    local SettingsTab = GUI:CreateTab("설정")
-    
-    SettingsTab:AddLabel("UI 설정")
-    
-    -- UI 색상 선택 버튼들
-    SettingsTab:AddButton("연한 빨간색", function()
-        Settings.UIColor = Color3.fromRGB(255, 150, 150)
-        MainFrame.BackgroundColor3 = Settings.UIColor
-        TopBar.BackgroundColor3 = Settings.UIColor
-        TabButtons.BackgroundColor3 = Settings.UIColor
-        SaveSettings()
-        GUI:Notify("설정", "UI 색상이 변경되었습니다.", 2)
-    end)
-    
-    SettingsTab:AddButton("연두색", function()
-        Settings.UIColor = Color3.fromRGB(150, 255, 150)
-        MainFrame.BackgroundColor3 = Settings.UIColor
-        TopBar.BackgroundColor3 = Settings.UIColor
-        TabButtons.BackgroundColor3 = Settings.UIColor
-        SaveSettings()
-        GUI:Notify("설정", "UI 색상이 변경되었습니다.", 2)
-    end)
-    
-    SettingsTab:AddButton("하얀색", function()
-        Settings.UIColor = Color3.fromRGB(255, 255, 255)
-        MainFrame.BackgroundColor3 = Settings.UIColor
-        TopBar.BackgroundColor3 = Settings.UIColor
-        TabButtons.BackgroundColor3 = Settings.UIColor
-        SaveSettings()
-        GUI:Notify("설정", "UI 색상이 변경되었습니다.", 2)
-    end)
-    
-    SettingsTab:AddButton("기본", function()
-        Settings.UIColor = Color3.fromRGB(30, 30, 35)
-        MainFrame.BackgroundColor3 = Settings.UIColor
-        TopBar.BackgroundColor3 = Settings.UIColor
-        TabButtons.BackgroundColor3 = Settings.UIColor
-        SaveSettings()
-        GUI:Notify("설정", "UI 색상이 변경되었습니다.", 2)
-    end)
-    
-    -- 무지개 모드
-    local RainbowMode = false
-    SettingsTab:AddToggle("무지개 모드", false, function(state)
-        RainbowMode = state
-        if state then
-            GUI:Notify("설정", "무지개 모드가 활성화되었습니다.", 2)
-            spawn(function()
-                while RainbowMode and wait() do
-                    local hue = tick() % 5 / 5
-                    local color = Color3.fromHSV(hue, 0.6, 1)
-                    Settings.UIColor = color
-                    MainFrame.BackgroundColor3 = color
-                    TopBar.BackgroundColor3 = color
-                    TabButtons.BackgroundColor3 = color
-                end
-            end)
-        else
-            GUI:Notify("설정", "무지개 모드가 비활성화되었습니다.", 2)
-        end
-    end)
-    
-    -- 투명도 토글
-    SettingsTab:AddToggle("투명도", true, function(state)
-        Settings.Transparency = state and 0.2 or 0
-        MainFrame.BackgroundTransparency = Settings.Transparency
-        TopBar.BackgroundTransparency = Settings.Transparency
-        TabButtons.BackgroundTransparency = Settings.Transparency
-        SaveSettings()
-        GUI:Notify("설정", state and "투명도가 활성화되었습니다." or "투명도가 비활성화되었습니다.", 2)
-    end)
-    
-    -- 알림 토글
-    SettingsTab:AddToggle("알림", Settings.NotificationsEnabled, function(state)
-        Settings.NotificationsEnabled = state
-        SaveSettings()
-        if state then
-            GUI:Notify("설정", "알림이 활성화되었습니다.", 2)
-        end
-    end)
-    
-    return GUI
+    return UI
 end
 
-return Library
+return AdvancedUI

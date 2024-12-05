@@ -1,43 +1,29 @@
-local AdvancedUI = {}
+local CustomUILibrary = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
--- 유틸리티 함수들
-local function createTween(object, info, properties)
-    local tween = TweenService:Create(object, TweenInfo.new(
-        info.Time or 0.5,
-        info.EasingStyle or Enum.EasingStyle.Quart,
-        info.EasingDirection or Enum.EasingDirection.Out
-    ), properties)
-    return tween
-end
-
-function AdvancedUI.new(title)
-    local UI = {}
+function CustomUILibrary:CreateWindow(title)
+    local Window = {}
     
-    -- 메인 GUI 생성
+    -- GUI 생성
     local ScreenGui = Instance.new("ScreenGui")
     local MainFrame = Instance.new("Frame")
-    local UICorner = Instance.new("UICorner")
     local TopBar = Instance.new("Frame")
     local Title = Instance.new("TextLabel")
-    local TabContainer = Instance.new("ScrollingFrame")
-    local ContentContainer = Instance.new("Frame")
+    local TabsHolder = Instance.new("Frame")
+    local ContentFrame = Instance.new("Frame")
     
-    -- GUI 설정
-    ScreenGui.Name = "AdvancedUI"
-    ScreenGui.Parent = game:GetService("CoreGui")
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Name = "CustomUI"
+    ScreenGui.Parent = game.CoreGui
     
     MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 500, 0, 350)
+    MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     MainFrame.Parent = ScreenGui
-    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
-    MainFrame.Size = UDim2.new(0, 600, 0, 400)
-    MainFrame.ClipsDescendants = true
     
-    -- UI 드래그 기능
-    local dragging
+    -- 드래그 기능 구현
+    local dragging = false
     local dragInput
     local dragStart
     local startPos
@@ -57,107 +43,70 @@ function AdvancedUI.new(title)
     end)
 
     UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
-    
-    -- UI 메서드들
-    function UI:CreateTab(name)
+
+    function Window:CreateTab(name)
         local Tab = {}
         
         local TabButton = Instance.new("TextButton")
-        local TabContent = Instance.new("ScrollingFrame")
-        
-        -- 탭 버튼 설정
         TabButton.Name = name .. "Tab"
-        TabButton.Parent = TabContainer
-        TabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-        TabButton.Size = UDim2.new(1, -10, 0, 40)
+        TabButton.Size = UDim2.new(1, 0, 0, 30)
+        TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
         TabButton.Text = name
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TabButton.Parent = TabsHolder
         
-        -- 탭 컨텐츠 설정
+        local TabContent = Instance.new("Frame")
         TabContent.Name = name .. "Content"
-        TabContent.Parent = ContentContainer
-        TabContent.BackgroundTransparency = 1
         TabContent.Size = UDim2.new(1, 0, 1, 0)
-        TabContent.Visible = false
+        TabContent.BackgroundTransparency = 1
+        TabContent.Parent = ContentFrame
         
-        -- 탭 메서드들
-        function Tab:CreateButton(buttonText, callback)
+        function Tab:CreateButton(text, callback)
             local Button = Instance.new("TextButton")
-            Button.Name = buttonText .. "Button"
+            Button.Size = UDim2.new(0.9, 0, 0, 30)
+            Button.Position = UDim2.new(0.05, 0, 0, #TabContent:GetChildren() * 35)
+            Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            Button.Text = text
             Button.Parent = TabContent
-            Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            Button.Size = UDim2.new(1, -20, 0, 40)
-            Button.Text = buttonText
-            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             
             Button.MouseButton1Click:Connect(callback)
             return Button
         end
         
-        function Tab:CreateToggle(toggleText, callback)
+        function Tab:CreateToggle(text, callback)
             local ToggleFrame = Instance.new("Frame")
             local ToggleButton = Instance.new("TextButton")
             local ToggleStatus = Instance.new("Frame")
             local enabled = false
             
-            -- 토글 설정
-            ToggleFrame.Name = toggleText .. "Toggle"
+            ToggleFrame.Size = UDim2.new(0.9, 0, 0, 30)
+            ToggleFrame.Position = UDim2.new(0.05, 0, 0, #TabContent:GetChildren() * 35)
+            ToggleFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
             ToggleFrame.Parent = TabContent
-            ToggleFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            ToggleFrame.Size = UDim2.new(1, -20, 0, 40)
             
             ToggleButton.MouseButton1Click:Connect(function()
                 enabled = not enabled
                 callback(enabled)
                 
-                -- 토글 애니메이션
                 local goal = {
-                    BackgroundColor3 = enabled and 
-                        Color3.fromRGB(0, 255, 128) or 
-                        Color3.fromRGB(255, 64, 64)
+                    BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
                 }
                 
-                createTween(ToggleStatus, {Time = 0.3}, goal):Play()
+                local tween = TweenService:Create(ToggleStatus, TweenInfo.new(0.3), goal)
+                tween:Play()
             end)
             
             return ToggleFrame
         end
         
-        function Tab:CreateSlider(sliderText, min, max, default, callback)
-            local SliderFrame = Instance.new("Frame")
-            local SliderBar = Instance.new("Frame")
-            local SliderButton = Instance.new("TextButton")
-            
-            -- 슬라이더 설정
-            SliderFrame.Name = sliderText .. "Slider"
-            SliderFrame.Parent = TabContent
-            SliderFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            SliderFrame.Size = UDim2.new(1, -20, 0, 60)
-            
-            -- 슬라이더 드래그 기능 구현
-            local dragging = false
-            
-            SliderButton.MouseButton1Down:Connect(function()
-                dragging = true
-            end)
-            
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
-                end
-            end)
-            
-            return SliderFrame
-        end
-        
         return Tab
     end
     
-    return UI
+    return Window
 end
 
-return AdvancedUI
+return CustomUILibrary

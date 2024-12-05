@@ -460,48 +460,108 @@ function Library:CreateWindow(name)
         return Tab
     end
     
+    -- 설정 탭 생성 (항상 마지막에 위치)
     local SettingsTab = Window:CreateTab("설정")
     SettingsTab.TabButton.LayoutOrder = 9999
     
+    -- 색상 테마 버튼들
     SettingsTab:AddButton("연한 빨간색", function()
-        Main.BackgroundColor3 = Color3.fromRGB(255, 102, 102)
-        TabList.BackgroundColor3 = Color3.fromRGB(255, 102, 102)
+        for _, obj in pairs(Main:GetDescendants()) do
+            if obj:IsA("Frame") then
+                obj.BackgroundColor3 = Color3.fromRGB(255, 102, 102)
+            end
+        end
         CreateNotification("연한 빨간색으로 변경되었습니다")
     end)
     
     SettingsTab:AddButton("연두색", function()
-        Main.BackgroundColor3 = Color3.fromRGB(144, 238, 144)
-        TabList.BackgroundColor3 = Color3.fromRGB(144, 238, 144)
+        for _, obj in pairs(Main:GetDescendants()) do
+            if obj:IsA("Frame") then
+                obj.BackgroundColor3 = Color3.fromRGB(144, 238, 144)
+            end
+        end
         CreateNotification("연두색으로 변경되었습니다")
     end)
     
     SettingsTab:AddButton("기본", function()
-        Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        TabList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        for _, obj in pairs(Main:GetDescendants()) do
+            if obj:IsA("Frame") then
+                if obj.Name == "Main" then
+                    obj.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                elseif obj.Name == "TabList" then
+                    obj.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+                else
+                    obj.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                end
+            end
+        end
         CreateNotification("기본 색상으로 변경되었습니다")
     end)
     
     SettingsTab:AddButton("하얀색", function()
-        Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        TabList.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        for _, obj in pairs(Main:GetDescendants()) do
+            if obj:IsA("Frame") then
+                obj.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            end
+        end
         CreateNotification("하얀색으로 변경되었습니다")
     end)
     
-    SettingsTab:AddButton("무지개", function()
-        local colors = {Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 127, 0), Color3.fromRGB(255, 255, 0), Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 0, 255), Color3.fromRGB(75, 0, 130), Color3.fromRGB(148, 0, 211)}
-        local index = 1
-        while true do
-            Main.BackgroundColor3 = colors[index]
-            TabList.BackgroundColor3 = colors[index]
-            index = index % #colors + 1
-            task.wait(0.5)
+    -- 무지개 모드
+    local RainbowConnection
+    SettingsTab:AddToggle("무지개 모드", false, function(state)
+        if state then
+            local colors = {
+                Color3.fromRGB(255, 0, 0),      -- 빨강
+                Color3.fromRGB(255, 127, 0),    -- 주황
+                Color3.fromRGB(255, 255, 0),    -- 노랑
+                Color3.fromRGB(0, 255, 0),      -- 초록
+                Color3.fromRGB(0, 0, 255),      -- 파랑
+                Color3.fromRGB(75, 0, 130),     -- 남색
+                Color3.fromRGB(148, 0, 211)     -- 보라
+            }
+            local index = 1
+            
+            RainbowConnection = game:GetService("RunService").RenderStepped:Connect(function()
+                for _, obj in pairs(Main:GetDescendants()) do
+                    if obj:IsA("Frame") then
+                        obj.BackgroundColor3 = colors[index]
+                    end
+                end
+                
+                if game:GetService("RunService").RenderStepped:Wait() then
+                    index = index % #colors + 1
+                end
+            end)
+        else
+            if RainbowConnection then
+                RainbowConnection:Disconnect()
+            end
+            
+            -- 기본 색상으로 되돌리기
+            for _, obj in pairs(Main:GetDescendants()) do
+                if obj:IsA("Frame") then
+                    if obj.Name == "Main" then
+                        obj.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                    elseif obj.Name == "TabList" then
+                        obj.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+                    else
+                        obj.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                    end
+                end
+            end
         end
     end)
     
-    SettingsTab:AddSlider("투명도", 0, 0.9, 0.1, function(value)
-        Main.BackgroundTransparency = value
-        TabList.BackgroundTransparency = value
-        CreateNotification("투명도가 " .. tostring(value) .. "로 설정되었습니다")
+    -- 투명도 슬라이더
+    SettingsTab:AddSlider("투명도", 0, 90, 10, function(value)
+        local transparency = value / 100
+        for _, obj in pairs(Main:GetDescendants()) do
+            if obj:IsA("Frame") then
+                obj.BackgroundTransparency = transparency
+            end
+        end
+        CreateNotification("투명도가 " .. value .. "%로 설정되었습니다")
     end)
     
     return Window

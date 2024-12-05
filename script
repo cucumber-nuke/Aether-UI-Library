@@ -28,6 +28,7 @@ function Library:CreateWindow(name)
     Main.Name = "Main"
     Main.Parent = ScreenGui
     Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Main.BackgroundTransparency = 0.1
     Main.Position = UDim2.new(0.5, -300, 0.5, -175)
     Main.Size = UDim2.new(0, 600, 0, 350)
     Main.ClipsDescendants = true
@@ -40,7 +41,12 @@ function Library:CreateWindow(name)
     TopBar.Name = "TopBar"
     TopBar.Parent = Main
     TopBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    TopBar.BackgroundTransparency = 0.1
     TopBar.Size = UDim2.new(1, 0, 0, 30)
+    
+    local TopBarCorner = Instance.new("UICorner")
+    TopBarCorner.CornerRadius = UDim.new(0, 10)
+    TopBarCorner.Parent = TopBar
     
     Title.Name = "Title"
     Title.Parent = TopBar
@@ -76,16 +82,21 @@ function Library:CreateWindow(name)
     TabList.Name = "TabList"
     TabList.Parent = Main
     TabList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    TabList.BackgroundTransparency = 0.1
     TabList.Position = UDim2.new(0, 0, 0, 30)
     TabList.Size = UDim2.new(0, 150, 1, -30)
+    
+    local TabListCorner = Instance.new("UICorner")
+    TabListCorner.CornerRadius = UDim.new(0, 10)
+    TabListCorner.Parent = TabList
     
     TabContainer.Name = "TabContainer"
     TabContainer.Parent = Main
     TabContainer.BackgroundTransparency = 1
     TabContainer.Position = UDim2.new(0, 150, 0, 30)
     TabContainer.Size = UDim2.new(1, -150, 1, -30)
+    TabContainer.ClipsDescendants = true
     
-    -- 드래그 기능 개선
     local dragStart, startPos
     local dragging = false
     
@@ -112,7 +123,6 @@ function Library:CreateWindow(name)
         end
     end)
     
-    -- 창 제어 버튼 기능
     local minimized = false
     
     MinimizeButton.MouseButton1Click:Connect(function()
@@ -132,7 +142,6 @@ function Library:CreateWindow(name)
         ScreenGui:Destroy()
     end)
     
-    -- 알림 시스템
     local function CreateNotification(text)
         local Notification = Instance.new("Frame")
         local NotifText = Instance.new("TextLabel")
@@ -140,6 +149,7 @@ function Library:CreateWindow(name)
         Notification.Name = "Notification"
         Notification.Parent = ScreenGui
         Notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Notification.BackgroundTransparency = 0.1
         Notification.Position = UDim2.new(1, 20, 1, -20)
         Notification.Size = UDim2.new(0, 250, 0, 50)
         Notification.AnchorPoint = Vector2.new(1, 1)
@@ -157,7 +167,6 @@ function Library:CreateWindow(name)
         NotifText.TextColor3 = Color3.fromRGB(255, 255, 255)
         NotifText.TextSize = 14
         
-        -- 애니메이션
         TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
             Position = UDim2.new(1, -20, 1, -20)
         }):Play()
@@ -172,7 +181,6 @@ function Library:CreateWindow(name)
         Notification:Destroy()
     end
     
-    -- 탭 기능
     function Window:CreateTab(name)
         local Tab = {}
         
@@ -183,12 +191,17 @@ function Library:CreateWindow(name)
         TabButton.Name = name .. "Button"
         TabButton.Parent = TabList
         TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        TabButton.BackgroundTransparency = 0.1
         TabButton.Size = UDim2.new(1, -10, 0, 30)
         TabButton.Position = UDim2.new(0, 5, 0, #Window.Tabs * 35)
         TabButton.Font = Enum.Font.SourceSans
         TabButton.Text = name
         TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
         TabButton.TextSize = 14
+        
+        local TabButtonCorner = Instance.new("UICorner")
+        TabButtonCorner.CornerRadius = UDim.new(0, 10)
+        TabButtonCorner.Parent = TabButton
         
         TabPage.Name = name .. "Page"
         TabPage.Parent = TabContainer
@@ -197,31 +210,21 @@ function Library:CreateWindow(name)
         TabPage.Position = UDim2.new(0, 5, 0, 5)
         TabPage.ScrollBarThickness = 3
         TabPage.Visible = false
+        TabPage.ClipsDescendants = true
         
         UIListLayout.Parent = TabPage
         UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
         UIListLayout.Padding = UDim.new(0, 5)
         
-        -- 탭 전환 기능
         TabButton.MouseButton1Click:Connect(function()
             if Window.CurrentTab then
-                TweenService:Create(Window.CurrentTab, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                    Position = UDim2.new(0, -300, 0, 5)
-                }):Play()
-                wait(0.3)
                 Window.CurrentTab.Visible = false
             end
             
-            TabPage.Position = UDim2.new(0, 300, 0, 5)
             TabPage.Visible = true
-            TweenService:Create(TabPage, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0, 5, 0, 5)
-            }):Play()
-            
             Window.CurrentTab = TabPage
         end)
         
-        -- 첫 번째 탭은 자동으로 보이게 설정
         if #Window.Tabs == 0 then
             TabPage.Visible = true
             Window.CurrentTab = TabPage
@@ -229,32 +232,32 @@ function Library:CreateWindow(name)
         
         table.insert(Window.Tabs, TabPage)
         
-        -- 요소 추가 함수들
         function Tab:AddButton(text, callback)
             local Button = Instance.new("TextButton")
             Button.Name = text
             Button.Parent = TabPage
             Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            Button.BackgroundTransparency = 0.1
             Button.Size = UDim2.new(1, -10, 0, 30)
             Button.Font = Enum.Font.SourceSans
             Button.Text = text
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.TextSize = 14
+            Button.AutoButtonColor = false
             
             local ButtonCorner = Instance.new("UICorner")
             ButtonCorner.CornerRadius = UDim.new(0, 10)
             ButtonCorner.Parent = Button
             
-            -- 호버 애니메이션
             Button.MouseEnter:Connect(function()
-                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                    BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                    BackgroundTransparency = 0
                 }):Play()
             end)
             
             Button.MouseLeave:Connect(function()
-                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                    BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                    BackgroundTransparency = 0.1
                 }):Play()
             end)
             
@@ -275,6 +278,7 @@ function Library:CreateWindow(name)
             Toggle.Name = text
             Toggle.Parent = TabPage
             Toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            Toggle.BackgroundTransparency = 0.1
             Toggle.Size = UDim2.new(1, -10, 0, 30)
             
             local ToggleCorner = Instance.new("UICorner")
@@ -295,6 +299,7 @@ function Library:CreateWindow(name)
             ToggleButton.Name = "ToggleButton"
             ToggleButton.Parent = Toggle
             ToggleButton.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 128) or Color3.fromRGB(255, 64, 64)
+            ToggleButton.BackgroundTransparency = 0.1
             ToggleButton.Position = UDim2.new(1, -35, 0.5, -10)
             ToggleButton.Size = UDim2.new(0, 20, 0, 20)
             ToggleButton.Font = Enum.Font.SourceSans
@@ -308,7 +313,7 @@ function Library:CreateWindow(name)
             
             ToggleButton.MouseButton1Click:Connect(function()
                 enabled = not enabled
-                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
                     BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 128) or Color3.fromRGB(255, 64, 64)
                 }):Play()
                 
@@ -322,18 +327,15 @@ function Library:CreateWindow(name)
         return Tab
     end
     
-    -- 설정 탭 생성 (항상 마지막에 위치)
     local SettingsTab = Window:CreateTab("설정")
-    SettingsTab.TabButton.LayoutOrder = 9999 -- 항상 마지막에 위치하도록
+    SettingsTab.TabButton.LayoutOrder = 9999
     
-    -- 기본 설정 옵션들
     SettingsTab:AddToggle("UI 토글 키", "RightShift", function(key)
-        -- UI 토글 키 설정
     end)
     
     SettingsTab:AddButton("UI 초기화", function()
-        -- UI 위치 초기화
-        CreateNotification("UI가 초기화되었습니다.")
+        Main.Position = UDim2.new(0.5, -300, 0.5, -175)
+        CreateNotification("UI가 초기화되었습니다")
     end)
     
     return Window

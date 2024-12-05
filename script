@@ -148,8 +148,13 @@ function Library:CreateWindow(title)
     local minimized = false
     MinimizeButton.MouseButton1Click:Connect(function()
         minimized = not minimized
-        local goal = minimized and UDim2.new(1, 0, 0, 30) or UDim2.new(1, 0, 1, 0)
-        TweenService:Create(TabContainer, TweenInfo.new(0.3), {Size = goal}):Play()
+        if minimized then
+            TabContainer.Visible = false
+            MainFrame.Size = UDim2.new(0, 500, 0, 30)
+        else
+            TabContainer.Visible = true
+            MainFrame.Size = UDim2.new(0, 500, 0, 350)
+        end
     end)
     
     CloseButton.MouseButton1Click:Connect(function()
@@ -177,6 +182,8 @@ function Library:CreateWindow(title)
         TabPage.Size = UDim2.new(1, 0, 1, 0)
         TabPage.ScrollBarThickness = 2
         TabPage.Visible = false
+        TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
+        TabPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
         
         UIListLayout.Parent = TabPage
         UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -207,10 +214,20 @@ function Library:CreateWindow(title)
             Button.Text = text
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.TextSize = 14
+            Button.AutoButtonColor = false
             
             local ButtonCorner = Instance.new("UICorner")
             ButtonCorner.CornerRadius = UDim.new(0, 4)
             ButtonCorner.Parent = Button
+            
+            -- 버튼 호버 효과
+            Button.MouseEnter:Connect(function()
+                TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
+            end)
+            
+            Button.MouseLeave:Connect(function()
+                TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 45)}):Play()
+            end)
             
             Button.MouseButton1Click:Connect(callback)
             return Button
@@ -251,6 +268,9 @@ function Library:CreateWindow(title)
                 enabled = not enabled
                 ToggleStatus.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(255, 50, 50)
                 callback(enabled)
+                if Settings.NotificationsEnabled then
+                    GUI:Notify("토글", text .. (enabled and " 활성화" or " 비활성화"), 2)
+                end
             end)
             
             return ToggleFrame
@@ -282,8 +302,9 @@ function Library:CreateWindow(title)
         local NotifText = Instance.new("TextLabel")
         
         Notification.Parent = ScreenGui
-        Notification.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        Notification.Position = UDim2.new(1, -250, 1, -100 - (#GUI.NotificationStack * 90))
+        Notification.BackgroundColor3 = Settings.UIColor
+        Notification.BackgroundTransparency = Settings.Transparency
+        Notification.Position = UDim2.new(1, 20, 1, -100 - (#GUI.NotificationStack * 90))
         Notification.Size = UDim2.new(0, 200, 0, 80)
         
         local NotifCorner = Instance.new("UICorner")
@@ -313,13 +334,26 @@ function Library:CreateWindow(title)
         
         table.insert(GUI.NotificationStack, Notification)
         
-        -- 애니메이션
+        -- 알림 애니메이션
         TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, -220, 1, -100 - ((#GUI.NotificationStack - 1) * 90))}):Play()
         wait(duration or 3)
         TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, 20, 1, -100 - ((#GUI.NotificationStack - 1) * 90))}):Play()
         wait(0.5)
+        
+        -- 알림 스택에서 제거
+        for i, v in ipairs(GUI.NotificationStack) do
+            if v == Notification then
+                table.remove(GUI.NotificationStack, i)
+                break
+            end
+        end
+        
+        -- 남은 알림들 위치 조정
+        for i, v in ipairs(GUI.NotificationStack) do
+            TweenService:Create(v, TweenInfo.new(0.3), {Position = UDim2.new(1, -220, 1, -100 - ((i-1) * 90))}):Play()
+        end
+        
         Notification:Destroy()
-        table.remove(GUI.NotificationStack, 1)
     end
     
     -- 설정 탭 추가
@@ -327,33 +361,81 @@ function Library:CreateWindow(title)
     
     SettingsTab:AddLabel("UI 설정")
     
-    SettingsTab:AddButton("UI 색상 선택", function()
-        local ColorPicker = Instance.new("Color3Value")
-        ColorPicker.Value = Settings.UIColor
-        ColorPicker.Changed:Connect(function(newColor)
-            Settings.UIColor = newColor
-            MainFrame.BackgroundColor3 = newColor
-            TopBar.BackgroundColor3 = newColor
-            TabButtons.BackgroundColor3 = newColor
-            SaveSettings()
-        end)
+    -- UI 색상 선택 버튼들
+    SettingsTab:AddButton("연한 빨간색", function()
+        Settings.UIColor = Color3.fromRGB(255, 150, 150)
+        MainFrame.BackgroundColor3 = Settings.UIColor
+        TopBar.BackgroundColor3 = Settings.UIColor
+        TabButtons.BackgroundColor3 = Settings.UIColor
+        SaveSettings()
+        GUI:Notify("설정", "UI 색상이 변경되었습니다.", 2)
     end)
     
-    SettingsTab:AddToggle("알림 켜기/끄기", Settings.NotificationsEnabled, function(state)
+    SettingsTab:AddButton("연두색", function()
+        Settings.UIColor = Color3.fromRGB(150, 255, 150)
+        MainFrame.BackgroundColor3 = Settings.UIColor
+        TopBar.BackgroundColor3 = Settings.UIColor
+        TabButtons.BackgroundColor3 = Settings.UIColor
+        SaveSettings()
+        GUI:Notify("설정", "UI 색상이 변경되었습니다.", 2)
+    end)
+    
+    SettingsTab:AddButton("하얀색", function()
+        Settings.UIColor = Color3.fromRGB(255, 255, 255)
+        MainFrame.BackgroundColor3 = Settings.UIColor
+        TopBar.BackgroundColor3 = Settings.UIColor
+        TabButtons.BackgroundColor3 = Settings.UIColor
+        SaveSettings()
+        GUI:Notify("설정", "UI 색상이 변경되었습니다.", 2)
+    end)
+    
+    SettingsTab:AddButton("기본", function()
+        Settings.UIColor = Color3.fromRGB(30, 30, 35)
+        MainFrame.BackgroundColor3 = Settings.UIColor
+        TopBar.BackgroundColor3 = Settings.UIColor
+        TabButtons.BackgroundColor3 = Settings.UIColor
+        SaveSettings()
+        GUI:Notify("설정", "UI 색상이 변경되었습니다.", 2)
+    end)
+    
+    -- 무지개 모드
+    local RainbowMode = false
+    SettingsTab:AddToggle("무지개 모드", false, function(state)
+        RainbowMode = state
+        if state then
+            GUI:Notify("설정", "무지개 모드가 활성화되었습니다.", 2)
+            spawn(function()
+                while RainbowMode and wait() do
+                    local hue = tick() % 5 / 5
+                    local color = Color3.fromHSV(hue, 0.6, 1)
+                    Settings.UIColor = color
+                    MainFrame.BackgroundColor3 = color
+                    TopBar.BackgroundColor3 = color
+                    TabButtons.BackgroundColor3 = color
+                end
+            end)
+        else
+            GUI:Notify("설정", "무지개 모드가 비활성화되었습니다.", 2)
+        end
+    end)
+    
+    -- 투명도 토글
+    SettingsTab:AddToggle("투명도", true, function(state)
+        Settings.Transparency = state and 0.2 or 0
+        MainFrame.BackgroundTransparency = Settings.Transparency
+        TopBar.BackgroundTransparency = Settings.Transparency
+        TabButtons.BackgroundTransparency = Settings.Transparency
+        SaveSettings()
+        GUI:Notify("설정", state and "투명도가 활성화되었습니다." or "투명도가 비활성화되었습니다.", 2)
+    end)
+    
+    -- 알림 토글
+    SettingsTab:AddToggle("알림", Settings.NotificationsEnabled, function(state)
         Settings.NotificationsEnabled = state
         SaveSettings()
-    end)
-    
-    SettingsTab:AddButton("투명도 조절", function()
-        local TransparencySlider = Instance.new("NumberValue")
-        TransparencySlider.Value = Settings.Transparency
-        TransparencySlider.Changed:Connect(function(newTransparency)
-            Settings.Transparency = newTransparency
-            MainFrame.BackgroundTransparency = newTransparency
-            TopBar.BackgroundTransparency = newTransparency
-            TabButtons.BackgroundTransparency = newTransparency
-            SaveSettings()
-        end)
+        if state then
+            GUI:Notify("설정", "알림이 활성화되었습니다.", 2)
+        end
     end)
     
     return GUI

@@ -1,14 +1,132 @@
--- ... (이전 코드는 동일) ...
+local Library = {}
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 
 function Library:CreateWindow(name)
-    -- ... (기본 UI 요소 생성) ...
+    local Window = {}
+    Window.Tabs = {}
+    Window.CurrentTab = nil
     
-    -- 모든 모서리를 둥글게
-    local function AddUICorner(instance, radius)
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, radius or 5)
-        corner.Parent = instance
+    local ScreenGui = Instance.new("ScreenGui")
+    local Main = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
+    local TopBar = Instance.new("Frame")
+    local Title = Instance.new("TextLabel")
+    local TabList = Instance.new("Frame")
+    local TabContainer = Instance.new("Frame")
+    local CloseButton = Instance.new("TextButton")
+    local MinimizeButton = Instance.new("TextButton")
+    
+    if syn then
+        syn.protect_gui(ScreenGui)
     end
+    
+    ScreenGui.Name = "BetterUILib"
+    ScreenGui.Parent = CoreGui
+    
+    Main.Name = "Main"
+    Main.Parent = ScreenGui
+    Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Main.Position = UDim2.new(0.5, -300, 0.5, -175)
+    Main.Size = UDim2.new(0, 600, 0, 350)
+    Main.ClipsDescendants = true
+    Main.Active = true
+    Main.Draggable = true
+    
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = Main
+    
+    TopBar.Name = "TopBar"
+    TopBar.Parent = Main
+    TopBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    TopBar.Size = UDim2.new(1, 0, 0, 30)
+    
+    Title.Name = "Title"
+    Title.Parent = TopBar
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Size = UDim2.new(1, -90, 1, 0)
+    Title.Font = Enum.Font.SourceSansBold
+    Title.Text = name
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 16
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    
+    CloseButton.Name = "CloseButton"
+    CloseButton.Parent = TopBar
+    CloseButton.BackgroundTransparency = 1
+    CloseButton.Position = UDim2.new(1, -30, 0, 0)
+    CloseButton.Size = UDim2.new(0, 30, 1, 0)
+    CloseButton.Font = Enum.Font.SourceSansBold
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.TextSize = 20
+    
+    MinimizeButton.Name = "MinimizeButton"
+    MinimizeButton.Parent = TopBar
+    MinimizeButton.BackgroundTransparency = 1
+    MinimizeButton.Position = UDim2.new(1, -60, 0, 0)
+    MinimizeButton.Size = UDim2.new(0, 30, 1, 0)
+    MinimizeButton.Font = Enum.Font.SourceSansBold
+    MinimizeButton.Text = "-"
+    MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinimizeButton.TextSize = 20
+    
+    TabList.Name = "TabList"
+    TabList.Parent = Main
+    TabList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    TabList.Position = UDim2.new(0, 0, 0, 30)
+    TabList.Size = UDim2.new(0, 150, 1, -30)
+    
+    TabContainer.Name = "TabContainer"
+    TabContainer.Parent = Main
+    TabContainer.BackgroundTransparency = 1
+    TabContainer.Position = UDim2.new(0, 150, 0, 30)
+    TabContainer.Size = UDim2.new(1, -150, 1, -30)
+    
+    -- 드래그 기능 개선
+    local dragStart, startPos
+    local dragging = false
+    
+    local function updateDrag(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end
+    
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = Main.Position
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(updateDrag)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    -- 창 제어 버튼 기능
+    local minimized = false
+    
+    MinimizeButton.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        if minimized then
+            Main.Size = UDim2.new(0, 600, 0, 30)
+        else
+            Main.Size = UDim2.new(0, 600, 0, 350)
+        end
+    end)
+    
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
     
     -- 알림 시스템
     local function CreateNotification(text)
@@ -21,7 +139,10 @@ function Library:CreateWindow(name)
         Notification.Position = UDim2.new(1, 20, 1, -20)
         Notification.Size = UDim2.new(0, 250, 0, 50)
         Notification.AnchorPoint = Vector2.new(1, 1)
-        AddUICorner(Notification)
+        
+        local NotifCorner = Instance.new("UICorner")
+        NotifCorner.CornerRadius = UDim.new(0, 10)
+        NotifCorner.Parent = Notification
         
         NotifText.Parent = Notification
         NotifText.BackgroundTransparency = 1
@@ -47,6 +168,156 @@ function Library:CreateWindow(name)
         Notification:Destroy()
     end
     
+    -- 탭 기능
+    function Window:CreateTab(name)
+        local Tab = {}
+        
+        local TabButton = Instance.new("TextButton")
+        local TabPage = Instance.new("ScrollingFrame")
+        local UIListLayout = Instance.new("UIListLayout")
+        
+        TabButton.Name = name .. "Button"
+        TabButton.Parent = TabList
+        TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        TabButton.Size = UDim2.new(1, -10, 0, 30)
+        TabButton.Position = UDim2.new(0, 5, 0, #Window.Tabs * 35)
+        TabButton.Font = Enum.Font.SourceSans
+        TabButton.Text = name
+        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TabButton.TextSize = 14
+        
+        TabPage.Name = name .. "Page"
+        TabPage.Parent = TabContainer
+        TabPage.BackgroundTransparency = 1
+        TabPage.Size = UDim2.new(1, -10, 1, -10)
+        TabPage.Position = UDim2.new(0, 5, 0, 5)
+        TabPage.ScrollBarThickness = 3
+        TabPage.Visible = false
+        
+        UIListLayout.Parent = TabPage
+        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        UIListLayout.Padding = UDim.new(0, 5)
+        
+        -- 탭 전환 기능
+        TabButton.MouseButton1Click:Connect(function()
+            if Window.CurrentTab then
+                TweenService:Create(Window.CurrentTab, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                    Position = UDim2.new(0, -300, 0, 5)
+                }):Play()
+                wait(0.3)
+                Window.CurrentTab.Visible = false
+            end
+            
+            TabPage.Position = UDim2.new(0, 300, 0, 5)
+            TabPage.Visible = true
+            TweenService:Create(TabPage, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                Position = UDim2.new(0, 5, 0, 5)
+            }):Play()
+            
+            Window.CurrentTab = TabPage
+        end)
+        
+        -- 첫 번째 탭은 자동으로 보이게 설정
+        if #Window.Tabs == 0 then
+            TabPage.Visible = true
+            Window.CurrentTab = TabPage
+        end
+        
+        table.insert(Window.Tabs, TabPage)
+        
+        -- 요소 추가 함수들
+        function Tab:AddButton(text, callback)
+            local Button = Instance.new("TextButton")
+            Button.Name = text
+            Button.Parent = TabPage
+            Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            Button.Size = UDim2.new(1, -10, 0, 30)
+            Button.Font = Enum.Font.SourceSans
+            Button.Text = text
+            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Button.TextSize = 14
+            
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 10)
+            ButtonCorner.Parent = Button
+            
+            -- 호버 애니메이션
+            Button.MouseEnter:Connect(function()
+                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                    BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                }):Play()
+            end)
+            
+            Button.MouseLeave:Connect(function()
+                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                    BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                }):Play()
+            end)
+            
+            Button.MouseButton1Click:Connect(function()
+                callback()
+                CreateNotification(text .. " 실행됨")
+            end)
+            
+            return Button
+        end
+        
+        function Tab:AddToggle(text, default, callback)
+            local Toggle = Instance.new("Frame")
+            local Title = Instance.new("TextLabel")
+            local ToggleButton = Instance.new("TextButton")
+            local enabled = default or false
+            
+            Toggle.Name = text
+            Toggle.Parent = TabPage
+            Toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            Toggle.Size = UDim2.new(1, -10, 0, 30)
+            
+            local ToggleCorner = Instance.new("UICorner")
+            ToggleCorner.CornerRadius = UDim.new(0, 10)
+            ToggleCorner.Parent = Toggle
+            
+            Title.Name = "Title"
+            Title.Parent = Toggle
+            Title.BackgroundTransparency = 1
+            Title.Position = UDim2.new(0, 10, 0, 0)
+            Title.Size = UDim2.new(1, -50, 1, 0)
+            Title.Font = Enum.Font.SourceSans
+            Title.Text = text
+            Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Title.TextSize = 14
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            
+            ToggleButton.Name = "ToggleButton"
+            ToggleButton.Parent = Toggle
+            ToggleButton.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 128) or Color3.fromRGB(255, 64, 64)
+            ToggleButton.Position = UDim2.new(1, -35, 0.5, -10)
+            ToggleButton.Size = UDim2.new(0, 20, 0, 20)
+            ToggleButton.Font = Enum.Font.SourceSans
+            ToggleButton.Text = ""
+            ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ToggleButton.TextSize = 14
+            
+            local ToggleButtonCorner = Instance.new("UICorner")
+            ToggleButtonCorner.CornerRadius = UDim.new(0, 10)
+            ToggleButtonCorner.Parent = ToggleButton
+            
+            ToggleButton.MouseButton1Click:Connect(function()
+                enabled = not enabled
+                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                    BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 128) or Color3.fromRGB(255, 64, 64)
+                }):Play()
+                
+                callback(enabled)
+                CreateNotification(text .. (enabled and " 활성화됨" or " 비활성화됨"))
+            end)
+            
+            return Toggle
+        end
+        
+        return Tab
+    end
+    
     -- 설정 탭 생성 (항상 마지막에 위치)
     local SettingsTab = Window:CreateTab("설정")
     SettingsTab.TabButton.LayoutOrder = 9999 -- 항상 마지막에 위치하도록
@@ -61,72 +332,7 @@ function Library:CreateWindow(name)
         CreateNotification("UI가 초기화되었습니다.")
     end)
     
-    -- 탭 전환 애니메이션
-    local function SwitchTab(newTab)
-        if Window.CurrentTab then
-            TweenService:Create(Window.CurrentTab, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
-                Position = UDim2.new(0, -300, 0, 5)
-            }):Play()
-            wait(0.3)
-            Window.CurrentTab.Visible = false
-        end
-        
-        newTab.Position = UDim2.new(0, 300, 0, 5)
-        newTab.Visible = true
-        TweenService:Create(newTab, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
-            Position = UDim2.new(0, 5, 0, 5)
-        }):Play()
-        
-        Window.CurrentTab = newTab
-    end
-    
-    -- 버튼 생성 함수 수정
-    function Tab:AddButton(text, callback)
-        local Button = Instance.new("TextButton")
-        -- ... (버튼 기본 설정) ...
-        
-        AddUICorner(Button)
-        
-        -- 호버 애니메이션
-        Button.MouseEnter:Connect(function()
-            TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
-                BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            }):Play()
-        end)
-        
-        Button.MouseLeave:Connect(function()
-            TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
-                BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            }):Play()
-        end)
-        
-        Button.MouseButton1Click:Connect(function()
-            callback()
-            CreateNotification(text .. " 실행됨")
-        end)
-        
-        return Button
-    end
-    
-    -- 토글 생성 함수 수정
-    function Tab:AddToggle(text, default, callback)
-        local Toggle = Instance.new("Frame")
-        -- ... (토글 기본 설정) ...
-        
-        AddUICorner(Toggle)
-        
-        Toggle.MouseButton1Click:Connect(function()
-            local newState = not Toggle.Enabled
-            Toggle.Enabled = newState
-            
-            TweenService:Create(Toggle.Indicator, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
-                BackgroundColor3 = newState and Color3.fromRGB(0, 255, 128) or Color3.fromRGB(255, 64, 64)
-            }):Play()
-            
-            callback(newState)
-            CreateNotification(text .. (newState and " 활성화됨" or " 비활성화됨"))
-        end)
-        
-        return Toggle
-    end
+    return Window
 end
+
+return Library

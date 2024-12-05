@@ -179,8 +179,8 @@ function Library:CreateWindow(name)
         
         task.wait(2)
         
-        TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-            Position = UDim2.new(1, 300, 1, -20)
+        TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Position = UDim2.new(1, 20, 1, -20)
         }):Play()
         
         task.wait(0.5)
@@ -204,7 +204,7 @@ function Library:CreateWindow(name)
         TabButton.Text = name
         TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
         TabButton.TextSize = 14
-        TabButton.AutoButtonColor = false
+        TabButton.LayoutOrder = #Window.Tabs + 1
         
         local TabButtonCorner = Instance.new("UICorner")
         TabButtonCorner.CornerRadius = UDim.new(0, 6)
@@ -360,6 +360,94 @@ function Library:CreateWindow(name)
             return Toggle
         end
         
+        function Tab:AddSlider(text, min, max, default, callback)
+            local Slider = Instance.new("Frame")
+            local Title = Instance.new("TextLabel")
+            local SliderBar = Instance.new("Frame")
+            local SliderButton = Instance.new("TextButton")
+            local ValueLabel = Instance.new("TextLabel")
+            
+            Slider.Name = text
+            Slider.Parent = TabPage
+            Slider.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            Slider.BackgroundTransparency = 0.1
+            Slider.Size = UDim2.new(1, 0, 0, 45)
+            
+            local SliderCorner = Instance.new("UICorner")
+            SliderCorner.CornerRadius = UDim.new(0, 6)
+            SliderCorner.Parent = Slider
+            
+            Title.Name = "Title"
+            Title.Parent = Slider
+            Title.BackgroundTransparency = 1
+            Title.Position = UDim2.new(0, 10, 0, 0)
+            Title.Size = UDim2.new(1, -20, 0, 20)
+            Title.Font = Enum.Font.SourceSans
+            Title.Text = text
+            Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Title.TextSize = 14
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            
+            SliderBar.Name = "SliderBar"
+            SliderBar.Parent = Slider
+            SliderBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            SliderBar.Position = UDim2.new(0, 10, 0, 25)
+            SliderBar.Size = UDim2.new(1, -20, 0, 5)
+            
+            local SliderBarCorner = Instance.new("UICorner")
+            SliderBarCorner.CornerRadius = UDim.new(0, 3)
+            SliderBarCorner.Parent = SliderBar
+            
+            SliderButton.Name = "SliderButton"
+            SliderButton.Parent = SliderBar
+            SliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SliderButton.Size = UDim2.new(0, 10, 0, 10)
+            SliderButton.Position = UDim2.new((default - min) / (max - min), -5, 0.5, -5)
+            SliderButton.Font = Enum.Font.SourceSans
+            SliderButton.Text = ""
+            SliderButton.TextSize = 14
+            SliderButton.AutoButtonColor = false
+            
+            local SliderButtonCorner = Instance.new("UICorner")
+            SliderButtonCorner.CornerRadius = UDim.new(0, 5)
+            SliderButtonCorner.Parent = SliderButton
+            
+            ValueLabel.Name = "ValueLabel"
+            ValueLabel.Parent = Slider
+            ValueLabel.BackgroundTransparency = 1
+            ValueLabel.Position = UDim2.new(1, -50, 0, 0)
+            ValueLabel.Size = UDim2.new(0, 40, 0, 20)
+            ValueLabel.Font = Enum.Font.SourceSans
+            ValueLabel.Text = tostring(default)
+            ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ValueLabel.TextSize = 14
+            ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+            
+            local dragging = false
+            
+            SliderButton.MouseButton1Down:Connect(function()
+                dragging = true
+            end)
+            
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+            
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local scale = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+                    local value = math.floor(min + (max - min) * scale)
+                    SliderButton.Position = UDim2.new(scale, -5, 0.5, -5)
+                    ValueLabel.Text = tostring(value)
+                    callback(value)
+                end
+            end)
+            
+            return Slider
+        end
+        
         if #Window.Tabs == 0 then
             TabPage.Visible = true
             TweenService:Create(TabButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
@@ -373,14 +461,47 @@ function Library:CreateWindow(name)
     end
     
     local SettingsTab = Window:CreateTab("설정")
+    SettingsTab.TabButton.LayoutOrder = 9999
     
-    SettingsTab:AddToggle("UI 토글 키", false, function(state)
-        print("UI 토글 키:", state)
+    SettingsTab:AddButton("연한 빨간색", function()
+        Main.BackgroundColor3 = Color3.fromRGB(255, 102, 102)
+        TabList.BackgroundColor3 = Color3.fromRGB(255, 102, 102)
+        CreateNotification("연한 빨간색으로 변경되었습니다")
     end)
     
-    SettingsTab:AddButton("UI 초기화", function()
-        Main.Position = UDim2.new(0.5, -300, 0.5, -175)
-        CreateNotification("UI가 초기화되었습니다")
+    SettingsTab:AddButton("연두색", function()
+        Main.BackgroundColor3 = Color3.fromRGB(144, 238, 144)
+        TabList.BackgroundColor3 = Color3.fromRGB(144, 238, 144)
+        CreateNotification("연두색으로 변경되었습니다")
+    end)
+    
+    SettingsTab:AddButton("기본", function()
+        Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        TabList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        CreateNotification("기본 색상으로 변경되었습니다")
+    end)
+    
+    SettingsTab:AddButton("하얀색", function()
+        Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TabList.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        CreateNotification("하얀색으로 변경되었습니다")
+    end)
+    
+    SettingsTab:AddButton("무지개", function()
+        local colors = {Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 127, 0), Color3.fromRGB(255, 255, 0), Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 0, 255), Color3.fromRGB(75, 0, 130), Color3.fromRGB(148, 0, 211)}
+        local index = 1
+        while true do
+            Main.BackgroundColor3 = colors[index]
+            TabList.BackgroundColor3 = colors[index]
+            index = index % #colors + 1
+            task.wait(0.5)
+        end
+    end)
+    
+    SettingsTab:AddSlider("투명도", 0, 0.9, 0.1, function(value)
+        Main.BackgroundTransparency = value
+        TabList.BackgroundTransparency = value
+        CreateNotification("투명도가 " .. tostring(value) .. "로 설정되었습니다")
     end)
     
     return Window

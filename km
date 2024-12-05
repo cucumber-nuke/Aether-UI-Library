@@ -26,13 +26,15 @@ end
 -- 총이 있을 때만 실행
 if hasGun then
     for _, target in pairs(game.Players:GetPlayers()) do
-        if target ~= player and target.Character and target.Character:FindFirstChild("Humanoid") 
+        if target ~= player and target.Character 
+        and target.Character:FindFirstChild("Humanoid") 
         and target.Character.Humanoid.Health > 0 then
+            
+            -- 타겟이 머더인지 확인
             local targetHasKnife = false
             local targetBackpack = target:FindFirstChild("Backpack")
             local targetCharacter = target.Character
 
-            -- 타겟이 칼을 들고 있는지 확인
             if targetCharacter:FindFirstChild("Knife") then
                 targetHasKnife = true
             elseif targetBackpack and targetBackpack:FindFirstChild("Knife") then
@@ -43,12 +45,19 @@ if hasGun then
                 -- 타겟 위로 이동
                 local targetPosition = targetCharacter.HumanoidRootPart.Position + Vector3.new(0, 5, 0)
                 character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
-
-                -- 아래를 향해 총 발사
-                local aimPosition = CFrame.new(character.Head.Position, targetCharacter.HumanoidRootPart.Position)
-                character:SetPrimaryPartCFrame(aimPosition)
-                Revolver:Fire()
                 wait(0.1)
+
+                -- 아래를 향해 조준하고 발사
+                local aimPosition = CFrame.new(character.Head.Position, targetCharacter.Head.Position)
+                character:SetPrimaryPartCFrame(aimPosition)
+                
+                -- 연속 발사
+                for i = 1, 3 do
+                    mouse1press()
+                    wait(0.1)
+                    mouse1release()
+                    wait(0.1)
+                end
             end
         end
     end

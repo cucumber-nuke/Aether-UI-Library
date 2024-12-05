@@ -118,9 +118,13 @@ function Library:CreateWindow(name)
     MinimizeButton.MouseButton1Click:Connect(function()
         minimized = not minimized
         if minimized then
-            Main.Size = UDim2.new(0, 600, 0, 30)
+            TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 600, 0, 30)
+            }):Play()
         else
-            Main.Size = UDim2.new(0, 600, 0, 350)
+            TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 600, 0, 350)
+            }):Play()
         end
     end)
     
@@ -154,13 +158,13 @@ function Library:CreateWindow(name)
         NotifText.TextSize = 14
         
         -- 애니메이션
-        TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart), {
+        TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
             Position = UDim2.new(1, -20, 1, -20)
         }):Play()
         
         wait(2)
         
-        TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart), {
+        TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
             Position = UDim2.new(1, 300, 1, -20)
         }):Play()
         
@@ -201,7 +205,7 @@ function Library:CreateWindow(name)
         -- 탭 전환 기능
         TabButton.MouseButton1Click:Connect(function()
             if Window.CurrentTab then
-                TweenService:Create(Window.CurrentTab, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                TweenService:Create(Window.CurrentTab, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
                     Position = UDim2.new(0, -300, 0, 5)
                 }):Play()
                 wait(0.3)
@@ -210,7 +214,7 @@ function Library:CreateWindow(name)
             
             TabPage.Position = UDim2.new(0, 300, 0, 5)
             TabPage.Visible = true
-            TweenService:Create(TabPage, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+            TweenService:Create(TabPage, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
                 Position = UDim2.new(0, 5, 0, 5)
             }):Play()
             
@@ -243,13 +247,13 @@ function Library:CreateWindow(name)
             
             -- 호버 애니메이션
             Button.MouseEnter:Connect(function()
-                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
                     BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                 }):Play()
             end)
             
             Button.MouseLeave:Connect(function()
-                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
                     BackgroundColor3 = Color3.fromRGB(40, 40, 40)
                 }):Play()
             end)
@@ -304,7 +308,7 @@ function Library:CreateWindow(name)
             
             ToggleButton.MouseButton1Click:Connect(function()
                 enabled = not enabled
-                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+                TweenService:Create(ToggleButton, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
                     BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 128) or Color3.fromRGB(255, 64, 64)
                 }):Play()
                 

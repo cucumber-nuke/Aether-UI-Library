@@ -1,0 +1,55 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local backpack = player:FindFirstChild("Backpack")
+local hasGun = false
+local gun = nil
+
+-- 총을 들고 있는지 확인
+if character then
+    gun = character:FindFirstChild("HeroRevolver") or character:FindFirstChild("Revolver")
+    if gun then
+        hasGun = true
+    end
+end
+
+-- 인벤토리에 총이 있는지 확인
+if backpack and not hasGun then
+    gun = backpack:FindFirstChild("HeroRevolver") or backpack:FindFirstChild("Revolver")
+    if gun then
+        hasGun = true
+        -- 총을 장착
+        gun.Parent = character
+    end
+end
+
+-- 총이 있을 때만 실행
+if hasGun then
+    for _, target in pairs(game.Players:GetPlayers()) do
+        if target ~= player and target.Character and target.Character:FindFirstChild("Humanoid") 
+        and target.Character.Humanoid.Health > 0 then
+            local targetHasKnife = false
+            local targetBackpack = target:FindFirstChild("Backpack")
+            local targetCharacter = target.Character
+
+            -- 타겟이 칼을 들고 있는지 확인
+            if targetCharacter:FindFirstChild("Knife") then
+                targetHasKnife = true
+            elseif targetBackpack and targetBackpack:FindFirstChild("Knife") then
+                targetHasKnife = true
+            end
+
+            if targetHasKnife then
+                -- 타겟으로 조준
+                local targetPosition = targetCharacter.HumanoidRootPart.Position
+                local aimPosition = CFrame.new(character.Head.Position, targetPosition)
+                character:SetPrimaryPartCFrame(aimPosition)
+
+                -- 총 발사
+                gun:Activate()
+                wait(0.1)
+            end
+        end
+    end
+else
+    print("총을 가지고 있지 않습니다!")
+end

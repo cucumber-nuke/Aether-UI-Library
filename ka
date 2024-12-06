@@ -1,44 +1,28 @@
-local function MurderKillAll()
-    local character = LocalPlayer.Character
-    if not character then 
-        print("캐릭터를 찾을 수 없습니다")
-        return 
-    end
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
-    -- 칼 확인 (인벤토리와 손에 든 것 모두 확인)
-    local knife = character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
-    if not knife then
-        print("칼이 없습니다")
-        return
-    end
+-- 캐릭터 확인
+if not LocalPlayer.Character then return end
+local character = LocalPlayer.Character
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-    -- 칼이 백팩에 있으면 들기
-    if knife.Parent == LocalPlayer.Backpack then
-        knife.Parent = character
-    end
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local targetHumanoid = player.Character:FindFirstChild("Humanoid")
-            local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer and player.Character then
+        local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
+        if targetRoot then
+            -- 캐릭터 이동
+            humanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 2)
+            wait(0.1)
             
-            if targetHumanoid and targetHumanoid.Health > 0 and targetRoot then
-                -- 텔레포트 및 공격
-                character.HumanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 2)
-                wait(0.1)
-                
-                -- 여러 가지 가능한 공격 함수 시도
-                if knife:FindFirstChild("Handle") then
-                    if knife.Handle:FindFirstChild("RequestHit") then
-                        knife.Handle.RequestHit:FireServer(targetRoot)
+            local knife = character:FindFirstChild("Knife")
+            if knife then
+                local server = knife:FindFirstChild("Server")
+                if server then
+                    local knifeDraw = server:FindFirstChild("KnifeDraw")
+                    if knifeDraw then
+                        knifeDraw:FireServer(targetRoot.Position)
                     end
                 end
-                
-                if knife:FindFirstChild("RequestHit") then
-                    knife.RequestHit:FireServer(targetRoot)
-                end
-                
-                wait(0)
             end
         end
     end

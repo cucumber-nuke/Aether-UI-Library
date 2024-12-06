@@ -1,5 +1,4 @@
-MainTab:AddButton("Pick UP Gun", function()
-    local Players = game:GetService("Players")
+ local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
     
     -- 캐릭터 확인

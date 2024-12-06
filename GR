@@ -1,17 +1,23 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- 캐릭터 확인
-if not LocalPlayer.Character then return end
-local character = LocalPlayer.Character
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
--- RevolverPickUp 찾기
-local debris = workspace:FindFirstChild("Game"):FindFirstChild("Debris")
-if debris then
-    local revolverPickup = debris:FindFirstChild("RevolverPickUp")
-    if revolverPickup then
-        -- 총으로 텔레포트
-        humanoidRootPart.CFrame = revolverPickup.CFrame
+MainTab:AddButton("Pick UP Gun", function()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    -- 캐릭터 확인
+    if not LocalPlayer.Character then return end
+    local character = LocalPlayer.Character
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    -- 총 수집
+    local debris = workspace:FindFirstChild("Game"):FindFirstChild("Debris")
+    if debris then
+        local revolverPickup = debris:FindFirstChild("RevolverPickUp")
+        if revolverPickup then
+            humanoid:MoveTo(revolverPickup.Position)
+            wait(0.1)
+        else
+            print("총을 찾을 수 없습니다.")
+        end
+    else
+        print("Debris 폴더를 찾을 수 없습니다.")
     end
-end
+end)

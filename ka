@@ -25,4 +25,3 @@
     
     -- 원래 위치로 돌아가기
     character:MoveTo(Vector3.new(originalPosition.X, originalPosition.Y, originalPosition.Z))
-end)

@@ -1,29 +1,28 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- 캐릭터 확인
-if not LocalPlayer.Character then return end
-local character = LocalPlayer.Character
-local humanoid = character:WaitForChild("Humanoid")
-
--- 각 플레이어 처치
-for _, player in pairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer and player.Character then
-        local targetHumanoid = player.Character:FindFirstChild("Humanoid")
-        if targetHumanoid and targetHumanoid.Health > 0 then
-            humanoid:MoveTo(player.Character.HumanoidRootPart.Position)
-            wait(0.1)
-            
-            local knife = character:FindFirstChild("Knife")
-            if knife then
-                local server = knife:FindFirstChild("Server")
-                if server then
-                    local knifeDraw = server:FindFirstChild("KnifeDraw")
-                    if knifeDraw then
-                        knifeDraw:FireServer(player.Character.HumanoidRootPart.Position)
-                    end
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local character = LocalPlayer.Character
+    
+    -- 현재 위치 저장
+    local originalPosition = character.HumanoidRootPart.Position
+    
+    -- 킬올 실행
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
+            if targetRoot then
+                -- 플레이어에게 이동
+                character:MoveTo(Vector3.new(targetRoot.Position.X, targetRoot.Position.Y, targetRoot.Position.Z))
+                wait(0.1)
+                
+                -- 칼로 공격
+                local knife = character:FindFirstChild("Knife")
+                if knife then
+                    knife.RequestHit:FireServer(targetRoot)
                 end
             end
         end
     end
-end
+    
+    -- 원래 위치로 돌아가기
+    character:MoveTo(Vector3.new(originalPosition.X, originalPosition.Y, originalPosition.Z))
+end)

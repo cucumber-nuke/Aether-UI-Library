@@ -1,52 +1,45 @@
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local backpack = player:FindFirstChild("Backpack")
-local hasKnife = false
-local knife = nil
-
--- 칼을 들고 있는지 확인
-if character then
-    knife = character:FindFirstChild("Knife")
-    if knife then
-        hasKnife = true
+local function MurderKillAll()
+    local character = LocalPlayer.Character
+    if not character then 
+        print("캐릭터를 찾을 수 없습니다")
+        return 
     end
-end
 
--- 인벤토리에 칼이 있는지 확인
-if backpack and not hasKnife then
-    knife = backpack:FindFirstChild("Knife")
-    if knife then
-        hasKnife = true
-        -- 칼을 장착
+    -- 칼 확인 (인벤토리와 손에 든 것 모두 확인)
+    local knife = character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
+    if not knife then
+        print("칼이 없습니다")
+        return
+    end
+
+    -- 칼이 백팩에 있으면 들기
+    if knife.Parent == LocalPlayer.Backpack then
         knife.Parent = character
-        wait(0.1)
     end
-end
 
--- 칼이 있을 때만 실행
-if hasKnife then
-    local oldPosition = character.HumanoidRootPart.CFrame
-    
-    for _, target in pairs(game.Players:GetPlayers()) do
-        if target ~= player and target.Character 
-        and target.Character:FindFirstChild("Humanoid") 
-        and target.Character:FindFirstChild("HumanoidRootPart")
-        and target.Character.Humanoid.Health > 0 then
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local targetHumanoid = player.Character:FindFirstChild("Humanoid")
+            local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
             
-            -- 타겟으로 텔레포트
-            character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
-            
-            -- 연속 공격
-            for i = 1, 10 do
-                knife:Activate()
+            if targetHumanoid and targetHumanoid.Health > 0 and targetRoot then
+                -- 텔레포트 및 공격
+                character.HumanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 2)
                 wait(0.1)
+                
+                -- 여러 가지 가능한 공격 함수 시도
+                if knife:FindFirstChild("Handle") then
+                    if knife.Handle:FindFirstChild("RequestHit") then
+                        knife.Handle.RequestHit:FireServer(targetRoot)
+                    end
+                end
+                
+                if knife:FindFirstChild("RequestHit") then
+                    knife.RequestHit:FireServer(targetRoot)
+                end
+                
+                wait(0)
             end
         end
     end
-    
-    -- 원래 위치로 돌아가기
-    wait(0.1)
-    character.HumanoidRootPart.CFrame = oldPosition
-else
-    print("칼을 가지고 있지 않습니다!")
 end

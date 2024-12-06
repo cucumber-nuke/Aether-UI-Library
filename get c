@@ -1,18 +1,27 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- 캐릭터 확인
-if not LocalPlayer.Character then return end
-local character = LocalPlayer.Character
-local humanoid = character:WaitForChild("Humanoid")
-
--- 코인 수집
-local coinsFolder = workspace:FindFirstChild("Game"):FindFirstChild("Coins")
-if coinsFolder then
-    for _, coin in pairs(coinsFolder:GetChildren()) do
-        if coin:IsA("BasePart") then
-            humanoid:MoveTo(coin.Position)
-            wait(0.1)
+MainTab:AddButton("코인 수집", function()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    -- 캐릭터 확인
+    if not LocalPlayer.Character then return end
+    local character = LocalPlayer.Character
+    
+    -- 현재 위치 저장
+    local originalPosition = character.HumanoidRootPart.Position
+    
+    -- 코인 수집
+    local coinsFolder = workspace:FindFirstChild("Game"):FindFirstChild("Coins")
+    if coinsFolder then
+        for _, coin in pairs(coinsFolder:GetChildren()) do
+            if coin:IsA("BasePart") then
+                -- 코인으로 이동
+                character:MoveTo(Vector3.new(coin.Position.X, coin.Position.Y, coin.Position.Z))
+                wait(0.1)
+            end
         end
+        -- 원래 위치로 돌아가기
+        character:MoveTo(Vector3.new(originalPosition.X, originalPosition.Y, originalPosition.Z))
+    else
+        print("Coins 폴더를 찾을 수 없습니다.")
     end
-end
+end)

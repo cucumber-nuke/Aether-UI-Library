@@ -6,6 +6,9 @@ local debris = workspace:FindFirstChild("Game"):FindFirstChild("Debris")
 if debris then
     local revolverPickup = debris:FindFirstChild("RevolverPickUp")
     if revolverPickup then
-        character:MoveTo(Vector3.new(revolverPickup.Position.X, revolverPickup.Position.Y, revolverPickup.Position.Z))
+        local revolver = revolverPickup:FindFirstChild("Revolver")
+        if revolver then
+            character:MoveTo(Vector3.new(revolver.Position.X, revolver.Position.Y, revolver.Position.Z))
+        end
     end
 end

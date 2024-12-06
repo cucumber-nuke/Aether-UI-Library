@@ -1,4 +1,3 @@
-MainTab:AddButton("Kill all | 머더일때만", function()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
     local character = LocalPlayer.Character
@@ -33,4 +32,3 @@ MainTab:AddButton("Kill all | 머더일때만", function()
     -- 원래 위치로 돌아가기
     wait(0.1)
     character:MoveTo(Vector3.new(originalPosition.X, originalPosition.Y, originalPosition.Z))
-end)

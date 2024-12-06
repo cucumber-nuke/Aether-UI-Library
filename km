@@ -1,23 +1,29 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+-- 캐릭터 확인
+if not LocalPlayer.Character then return end
+local character = LocalPlayer.Character
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
 for _, player in pairs(Players:GetPlayers()) do
     if player ~= LocalPlayer and player.Character then
         local knife = player.Character:FindFirstChild("Knife")
         if knife then
             local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
             if targetRoot then
-                -- 머더와의 거리 조정
-                LocalPlayer.Character.HumanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 3)
+                -- 캐릭터 이동
+                humanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 5)
                 wait(0.1)
                 
-                -- 총 확인 및 발사
-                local gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Revolver")
-                if gun then
-                    if gun:FindFirstChild("KnifeServer") then
-                        gun.KnifeServer.ShootGun:FireServer(targetRoot.Position)
-                    elseif gun:FindFirstChild("ShootGun") then
-                        gun.ShootGun:FireServer(targetRoot.Position)
+                local revolver = character:FindFirstChild("Revolver")
+                if revolver then
+                    local server = revolver:FindFirstChild("Server")
+                    if server then
+                        local revolverShoot = server:FindFirstChild("RevolverShoot")
+                        if revolverShoot then
+                            revolverShoot:FireServer(targetRoot.Position)
+                        end
                     end
                 end
             end

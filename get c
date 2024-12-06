@@ -1,0 +1,18 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- 캐릭터 확인
+if not LocalPlayer.Character then return end
+local character = LocalPlayer.Character
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- 코인 수집
+local coinsFolder = workspace:FindFirstChild("Game"):FindFirstChild("Coins")
+if coinsFolder then
+    for _, coin in pairs(coinsFolder:GetChildren()) do
+        if coin:IsA("BasePart") then
+            humanoidRootPart.CFrame = coin.CFrame
+            wait(0.1)
+        end
+    end
+end

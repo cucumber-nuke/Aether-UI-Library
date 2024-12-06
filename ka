@@ -1,9 +1,18 @@
+MainTab:AddButton("Kill all | 머더일때만", function()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
     local character = LocalPlayer.Character
+    if not character then return end
     
     -- 현재 위치 저장
     local originalPosition = character.HumanoidRootPart.Position
+    
+    -- 칼 확인
+    local knife = character:FindFirstChild("Knife")
+    if not knife then 
+        print("칼을 들고 있지 않습니다!")
+        return 
+    end
     
     -- 킬올 실행
     for _, player in pairs(Players:GetPlayers()) do
@@ -14,14 +23,14 @@
                 character:MoveTo(Vector3.new(targetRoot.Position.X, targetRoot.Position.Y, targetRoot.Position.Z))
                 wait(0.1)
                 
-                -- 칼로 공격
-                local knife = character:FindFirstChild("Knife")
-                if knife then
-                    knife.RequestHit:FireServer(targetRoot)
-                end
+                -- 마우스 클릭 시뮬레이션
+                mouse1click()
+                wait(1.1)
             end
         end
     end
     
     -- 원래 위치로 돌아가기
+    wait(0.1)
     character:MoveTo(Vector3.new(originalPosition.X, originalPosition.Y, originalPosition.Z))
+end)

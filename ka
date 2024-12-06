@@ -4,14 +4,14 @@ local LocalPlayer = Players.LocalPlayer
 -- 캐릭터 확인
 if not LocalPlayer.Character then return end
 local character = LocalPlayer.Character
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
 
+-- 각 플레이어 처치
 for _, player in pairs(Players:GetPlayers()) do
     if player ~= LocalPlayer and player.Character then
-        local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
-        if targetRoot then
-            -- 캐릭터 이동
-            humanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 2)
+        local targetHumanoid = player.Character:FindFirstChild("Humanoid")
+        if targetHumanoid and targetHumanoid.Health > 0 then
+            humanoid:MoveTo(player.Character.HumanoidRootPart.Position)
             wait(0.1)
             
             local knife = character:FindFirstChild("Knife")
@@ -20,7 +20,7 @@ for _, player in pairs(Players:GetPlayers()) do
                 if server then
                     local knifeDraw = server:FindFirstChild("KnifeDraw")
                     if knifeDraw then
-                        knifeDraw:FireServer(targetRoot.Position)
+                        knifeDraw:FireServer(player.Character.HumanoidRootPart.Position)
                     end
                 end
             end

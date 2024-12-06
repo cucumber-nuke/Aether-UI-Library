@@ -1,31 +1,26 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- 머더 자동 처치 함수
-local function KillMurderer()
-    local character = LocalPlayer.Character
-    if not character then return end
-    
-    -- Revolver 확인
-    local gun = character:FindFirstChild("Revolver") or character:FindFirstChild("HeroRevolver")
-    if not gun then 
-        print("총을 들고 있지 않습니다!")
-        return 
-    end
-
-    -- 머더 찾기
-    for _, player in pairs(Players:GetPlayers()) do
-        if player.Character and player ~= LocalPlayer then
-            local knife = player.Character:FindFirstChild("Knife")
-            if knife then
-                -- 머더 위치로 이동
-                character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer and player.Character then
+        local knife = player.Character:FindFirstChild("Knife")
+        if knife then
+            local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
+            if targetRoot then
+                -- 머더와의 거리 조정
+                LocalPlayer.Character.HumanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 3)
+                wait(0.1)
                 
-                -- 총 발사
-                gun.RequestsFire:FireServer(player.Character.HumanoidRootPart.Position)
-                return
+                -- 총 확인 및 발사
+                local gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Revolver")
+                if gun then
+                    if gun:FindFirstChild("KnifeServer") then
+                        gun.KnifeServer.ShootGun:FireServer(targetRoot.Position)
+                    elseif gun:FindFirstChild("ShootGun") then
+                        gun.ShootGun:FireServer(targetRoot.Position)
+                    end
+                end
             end
         end
     end
-    print("머더를 찾을 수 없습니다!")
 end

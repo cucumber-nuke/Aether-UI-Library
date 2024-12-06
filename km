@@ -1,66 +1,31 @@
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local backpack = player:FindFirstChild("Backpack")
-local hasGun = false
-local gun = nil
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- 총을 들고 있는지 확인
-if character then
-    gun = character:FindFirstChild("HeroRevolver") or character:FindFirstChild("Revolver")
-    if gun then
-        hasGun = true
+-- 머더 자동 처치 함수
+local function KillMurderer()
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    -- Revolver 확인
+    local gun = character:FindFirstChild("Revolver") or character:FindFirstChild("HeroRevolver")
+    if not gun then 
+        print("총을 들고 있지 않습니다!")
+        return 
     end
-end
 
--- 인벤토리에 총이 있는지 확인
-if backpack and not hasGun then
-    gun = backpack:FindFirstChild("HeroRevolver") or backpack:FindFirstChild("Revolver")
-    if gun then
-        hasGun = true
-        -- 총을 장착
-        gun.Parent = character
-        wait(0.1)
-    end
-end
-
--- 총이 있을 때만 실행
-if hasGun then
-    for _, target in pairs(game.Players:GetPlayers()) do
-        if target ~= player and target.Character 
-        and target.Character:FindFirstChild("Humanoid") 
-        and target.Character.Humanoid.Health > 0 then
-            
-            -- 타겟이 머더인지 확인
-            local targetHasKnife = false
-            local targetBackpack = target:FindFirstChild("Backpack")
-            local targetCharacter = target.Character
-
-            if targetCharacter:FindFirstChild("Knife") then
-                targetHasKnife = true
-            elseif targetBackpack and targetBackpack:FindFirstChild("Knife") then
-                targetHasKnife = true
-            end
-
-            if targetHasKnife then
-                -- 타겟 위로 이동
-                local targetPosition = targetCharacter.HumanoidRootPart.Position + Vector3.new(0, 5, 0)
-                character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
-                wait(0.1)
-
-                -- 아래를 향해 조준하고 발사
-                local aimPosition = CFrame.new(character.Head.Position, targetCharacter.Head.Position)
-                character:SetPrimaryPartCFrame(aimPosition)
+    -- 머더 찾기
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character and player ~= LocalPlayer then
+            local knife = player.Character:FindFirstChild("Knife")
+            if knife then
+                -- 머더 위치로 이동
+                character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
                 
-                -- 연속 발사
-                for i = 1, 3 do
-                    mouse1press()
-                    wait(0.1)
-                    mouse1release()
-                    wait(0.1)
-                end
+                -- 총 발사
+                gun.RequestsFire:FireServer(player.Character.HumanoidRootPart.Position)
+                return
             end
         end
     end
-else
-    print("총을 가지고 있지 않습니다!")
+    print("머더를 찾을 수 없습니다!")
 end

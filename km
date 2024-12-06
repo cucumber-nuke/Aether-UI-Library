@@ -1,22 +1,32 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local character = LocalPlayer.Character
-
-for _, player in pairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer and player.Character then
-        local knife = player.Character:FindFirstChild("Knife")
-        if knife then
-            local targetPos = player.Character.HumanoidRootPart.Position
-            character:MoveTo(Vector3.new(targetPos.X, targetPos.Y, targetPos.Z))
-            wait(0.1)
-            
-            local revolver = character:FindFirstChild("Revolver")
-            if revolver and revolver:FindFirstChild("Server") then
-                local revolverShoot = revolver.Server:FindFirstChild("RevolverShoot")
-                if revolverShoot then
-                    revolverShoot:FireServer(targetPos)
+MainTab:AddButton("Kill murder | 보안관 또는 영웅일때만", function()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local character = LocalPlayer.Character
+    
+    -- 현재 위치 저장
+    local originalPosition = character.HumanoidRootPart.Position
+    
+    -- 머더 찾기
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local knife = player.Character:FindFirstChild("Knife")
+            if knife then
+                local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
+                if targetRoot then
+                    -- 머더에게 이동
+                    character:MoveTo(Vector3.new(targetRoot.Position.X, targetRoot.Position.Y, targetRoot.Position.Z))
+                    wait(0.1)
+                    
+                    -- 총으로 공격
+                    local revolver = character:FindFirstChild("Revolver")
+                    if revolver then
+                        revolver.RequestFire:FireServer(targetRoot.Position)
+                    end
                 end
             end
         end
     end
-end
+    
+    -- 원래 위치로 돌아가기
+    character:MoveTo(Vector3.new(originalPosition.X, originalPosition.Y, originalPosition.Z))
+end)

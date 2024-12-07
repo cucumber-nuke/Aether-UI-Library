@@ -1,34 +1,50 @@
     local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-    local character = LocalPlayer.Character
-    if not character then return end
+    local Player = Players.LocalPlayer
     
-    -- 현재 위치 저장
-    local originalPosition = character.HumanoidRootPart.Position
-    
-    -- 칼 확인
-    local knife = character:FindFirstChild("Knife")
-    if not knife then 
-        print("칼을 들고 있지 않습니다!")
-        return 
+    -- 머더인지 확인
+    if not Player.Character:FindFirstChild("Knife") then
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "오류",
+            Text = "머더가 아닙니다!",
+            Duration = 3
+        })
+        return
     end
     
-    -- 킬올 실행
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
-            if targetRoot then
-                -- 플레이어에게 이동
-                character:MoveTo(Vector3.new(targetRoot.Position.X, targetRoot.Position.Y, targetRoot.Position.Z))
-                wait(0.1)
+    -- 플링 설정
+    getgenv().FPDH = workspace.FallenPartsDestroyHeight
+    
+    -- 모든 플레이어에 대해 플링 실행
+    for _, target in pairs(Players:GetPlayers()) do
+        if target ~= Player then
+            local Character = Player.Character
+            local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+            local RootPart = Humanoid and Humanoid.RootPart
+            
+            local TCharacter = target.Character
+            if TCharacter then
+                local THumanoid = TCharacter:FindFirstChildOfClass("Humanoid")
+                local TRootPart = THumanoid and THumanoid.RootPart
                 
-                -- 마우스 클릭 시뮬레이션
-                mouse1click()
-                wait(1.1)
+                if TRootPart then
+                    -- 플링 실행
+                    local BV = Instance.new("BodyVelocity")
+                    BV.Name = "KillVelocity"
+                    BV.Parent = RootPart
+                    BV.Velocity = Vector3.new(9999999, 9999999, 9999999)
+                    BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+                    
+                    local oldPos = RootPart.CFrame
+                    
+                    -- 타겟에게 이동 및 플링
+                    RootPart.CFrame = TRootPart.CFrame
+                    wait(0.1)
+                    BV:Destroy()
+                    
+                    -- 원래 위치로 복귀
+                    RootPart.CFrame = oldPos
+                end
             end
+            wait(0.5) -- 다음 플레이어로 넘어가기 전 대기
         end
     end
-    
-    -- 원래 위치로 돌아가기
-    wait(0.1)
-    character:MoveTo(Vector3.new(originalPosition.X, originalPosition.Y, originalPosition.Z))

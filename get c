@@ -12,7 +12,7 @@
         for _, coin in pairs(coinsFolder:GetChildren()) do
             if coin:IsA("BasePart") then
                 humanoidRootPart.CFrame = coin.CFrame
-                wait(0.1)
+                task.wait(0.01) -- 0.1초에서 0.01초로 변경
             end
         end
     end

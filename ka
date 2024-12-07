@@ -1,7 +1,6 @@
     local Players = game:GetService("Players")
     local Player = Players.LocalPlayer
     
-    -- 머더인지 확인
     if not Player.Character:FindFirstChild("Knife") then
         game:GetService("StarterGui"):SetCore("SendNotification", {
             Title = "오류",
@@ -11,40 +10,33 @@
         return
     end
     
-    -- 플링 설정
-    getgenv().FPDH = workspace.FallenPartsDestroyHeight
+    local Character = Player.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local RootPart = Humanoid and Humanoid.RootPart
     
-    -- 모든 플레이어에 대해 플링 실행
     for _, target in pairs(Players:GetPlayers()) do
         if target ~= Player then
-            local Character = Player.Character
-            local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-            local RootPart = Humanoid and Humanoid.RootPart
-            
             local TCharacter = target.Character
             if TCharacter then
                 local THumanoid = TCharacter:FindFirstChildOfClass("Humanoid")
                 local TRootPart = THumanoid and THumanoid.RootPart
                 
                 if TRootPart then
-                    -- 플링 실행
+                    local oldPos = RootPart.Position
+                    
                     local BV = Instance.new("BodyVelocity")
                     BV.Name = "KillVelocity"
                     BV.Parent = RootPart
-                    BV.Velocity = Vector3.new(9999999, 9999999, 9999999)
+                    BV.Velocity = Vector3.new(50000, 50000, 50000)  -- 플링 속도 조절
                     BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
                     
-                    local oldPos = RootPart.CFrame
-                    
-                    -- 타겟에게 이동 및 플링
-                    RootPart.CFrame = TRootPart.CFrame
-                    wait(0.1)
+                    Humanoid:MoveTo(TRootPart.Position)
+                    wait(0.2)  -- 플링 시간 0.2초로 제한
                     BV:Destroy()
                     
-                    -- 원래 위치로 복귀
-                    RootPart.CFrame = oldPos
+                    Humanoid:MoveTo(oldPos)
+                    wait(0.3)  -- 다음 타겟으로 넘어가기 전 대기
                 end
             end
-            wait(0.5) -- 다음 플레이어로 넘어가기 전 대기
         end
     end

@@ -1,30 +1,47 @@
     local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-    local character = LocalPlayer.Character
+    local Player = Players.LocalPlayer
     
-    -- 현재 위치 저장
-    local originalPosition = character.HumanoidRootPart.Position
-    
-    -- 머더 찾기
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local knife = player.Character:FindFirstChild("Knife")
-            if knife then
-                local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
-                if targetRoot then
-                    -- 머더에게 이동
-                    character:MoveTo(Vector3.new(targetRoot.Position.X, targetRoot.Position.Y, targetRoot.Position.Z))
-                    wait(0.1)
-                    
-                    -- 총으로 공격
-                    local revolver = character:FindFirstChild("Revolver")
-                    if revolver then
-                        revolver.RequestFire:FireServer(targetRoot.Position)
-                    end
-                end
+    local function findMurderer()
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("Knife") then
+                return player
             end
         end
+        return nil
     end
     
-    -- 원래 위치로 돌아가기
-    character:MoveTo(Vector3.new(originalPosition.X, originalPosition.Y, originalPosition.Z))
+    local murderer = findMurderer()
+    if not murderer then
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "오류",
+            Text = "머더를 찾을 수 없습니다!",
+            Duration = 3
+        })
+        return
+    end
+    
+    local Character = Player.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local RootPart = Humanoid and Humanoid.RootPart
+    
+    local MurdererChar = murderer.Character
+    if MurdererChar then
+        local THumanoid = MurdererChar:FindFirstChildOfClass("Humanoid")
+        local TRootPart = THumanoid and THumanoid.RootPart
+        
+        if TRootPart then
+            local oldPos = RootPart.Position
+            
+            local BV = Instance.new("BodyVelocity")
+            BV.Name = "KillVelocity"
+            BV.Parent = RootPart
+            BV.Velocity = Vector3.new(50000, 50000, 50000)  -- 플링 속도 조절
+            BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+            
+            Humanoid:MoveTo(TRootPart.Position)
+            wait(0.2)  -- 플링 시간 0.2초로 제한
+            BV:Destroy()
+            
+            Humanoid:MoveTo(oldPos)
+        end
+    end
